@@ -9,7 +9,6 @@ Search engines are now adopting generative approaches to provide  answers along 
 2. [Architectures](#architectures)
 3. [Evaluation](#evaluation)
 4. [Results](#results)
-5. [FAQ](#faq)
 6. [Contact](#contact)
 ## Installation
 Install dependent Python libraries by running the command below.
