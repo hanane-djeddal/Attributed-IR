@@ -8,7 +8,77 @@ Search engines are now adopting generative approaches to provide  answers along 
 1. [Installation](#installation)
 2. [Architectures](#architectures)
 3. [Evaluation](#evaluation)
-4. [Data](#data)
-5. [Results](#results)
-6. [FAQ](#faq)
-7. [Contact](#contact)
+4. [Results](#results)
+5. [FAQ](#faq)
+6. [Contact](#contact)
+## Installation
+Install dependent Python libraries by running the command below.
+
+```
+pip install -r requirements.txt
+```
+
+You can also create a conda environment by running the command below.
+
+```
+conda env create -f attributed-ir.yml
+```
+## Architectures
+
+The different architectures of LLM can be found in `scripts`. You can update `config.py` with the specific setting. (more details soon)
+#### Generate (G)
+
+A simple run of the script :
+
+```
+python generate_answer.py
+```
+
+#### Retrieve Then Generate (RTG)
+
+First run the retrieval script :
+
+```
+python retrieve.py
+```
+
+Once the retrieval is done, update `config.py` with the name of the generated answer and the experiment to the RTG setting. You can then run : 
+```
+python generate_answer.py
+```
+
+#### Generate Then Retrieve (GTR)
+You have to first run the experiment with the architecture "Generate". Then run :
+
+```
+python retrieve_posthoc_gtr.py
+```
+
+
+
+
+
+## Evaluation
+
+We evaluate both the correctness and attribution of the answer. We take in consideration the case where multiple answers are possible.
+
+To evaluate correctness run 
+
+```
+python evaluate_Correstness_answer_with_citation.py
+```
+
+For Attribution metrics : 
+
+```
+python citations_eval.py
+```
+
+## Results
+
+Coming soon.
+
+
+## Contact
+If you have questions, please open an issue mentioning @hanane-djeddal or send an email to hanane.djeddal[at]irit.fr.
+
