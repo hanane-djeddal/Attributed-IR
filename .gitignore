@@ -1,0 +1,20 @@
+__pycache__
+
+#IDE
+.idea/
+.vs/
+.vscode/
+
+#notebooks
+.ipynb_checkpoints
+# outputs
+*.xlsx
+*.csv
+*.pt
+*.json
+*.log
+*.tsv
+*.pkl
+*.dat
+
+
