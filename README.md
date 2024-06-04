@@ -12,3 +12,15 @@ Search engines are now adopting generative approaches to provide  answers along 
 5. [Results](#results)
 6. [FAQ](#faq)
 7. [Contact](#contact)
+## Installation
+Install dependent Python libraries by running the command below.
+
+```
+pip install -r requirements.txt
+```
+
+You can also create a conda environment by running the command below.
+
+```
+conda env create -f attributed-ir.yml
+```
