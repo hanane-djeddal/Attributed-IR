@@ -16,17 +16,19 @@ class Retriever:
         self.searcher = LuceneSearcher.from_prebuilt_index(index)
         self.ranker = MonoT5(device="cuda")
 
-    def search(self, query, k=1):
-        docs = self.searcher.search(query, k=k)
+    def search(self, query, k=10):
+        docs = self.searcher.search(query, k=100)
         retrieved_docid = [i.docid for i in docs]
         docs_text = [
             eval(self.searcher.doc(docid).raw())
             for _, docid in enumerate(retrieved_docid)
         ]
-        ranked_doc = self.ranker.rerank(query, docs_text)[:20]
+        ranked_doc = self.ranker.rerank(query, docs_text)[:k]
         docids = [i["docid"] for i in ranked_doc]
         scores = [i["score"] for i in ranked_doc]
-        docs_text = [self.searcher.doc(docid).raw() for j, docid in enumerate(docids)]
+        docs_text = [
+            eval(self.searcher.doc(docid).raw()) for j, docid in enumerate(docids)
+        ]
         docs = [
             {"id": docids[i], "text": docs_text[i], "score": scores[i]}
             for i in range(len(docids))

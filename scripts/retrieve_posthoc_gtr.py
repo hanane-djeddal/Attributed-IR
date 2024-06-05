@@ -13,7 +13,6 @@ sys.path.append(ROOT_PATH)
 
 from config import CONFIG
 from src.retrieval.retrieve_bm25_monoT5 import Retriever
-from src.models.monoT5 import MonoT5
 
 Sub_Query = True
 
@@ -22,7 +21,7 @@ def format_support_passages(passages_text, passages_ids):
     passages = []
     for i in range(len(passages_text)):
         passages.append(
-            {"idx": i + 1, "docid": passages_ids[i], "text": passages_text[i]}
+            {"idx": i + 1, "docid": passages_ids[i], "text": passages_text[i]["text"]}
         )
     return passages
 
@@ -47,7 +46,7 @@ def main():
 
     print("Loading queries from MIRACL topics dataset ")
 
-    answer_file = CONFIG["hagrid_miracl"]["posthoc_retrieval_file"]
+    answer_file = CONFIG["retrieval"]["posthoc_retrieval_file"]
     anwsers_as_queries = pd.read_csv(answer_file, index_col=0)
     #### process generated text
     pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
@@ -57,11 +56,6 @@ def main():
     anwsers_as_queries["processed_generated_text"] = anwsers_as_queries[
         "processed_generated_text"
     ].str.replace(pattern, "", regex=True)
-
-    print("loading models : MonoT5")
-    torch.set_grad_enabled(False)
-
-    monot5 = MonoT5(device="cuda")
 
     results = []
 
@@ -82,7 +76,7 @@ def main():
 
             for sub_query in sent_tokenize(answer):
                 query = " ".join([question, sub_query])
-                passages, score = retreive(sub_query, ranker, monot5)
+                passages, score = retreive(sub_query, ranker)
                 data["sub_queries"].append(
                     {
                         "sub_query": sub_query,
@@ -93,7 +87,7 @@ def main():
 
         else:
             query = " ".join([question, answer])
-            passages, score = retreive(query, ranker, monot5)
+            passages, score = retreive(query, ranker)
 
             data = {
                 "query": question,
@@ -109,7 +103,7 @@ def main():
     end = time.time()
     print("time: ", end - start)
     results_df = pd.DataFrame.from_dict(results)
-    results_df.to_csv(CONFIG["hagrid_miracl"]["results_file"])
+    results_df.to_csv(CONFIG["retrieval"]["results_file"])
 
 
 main()

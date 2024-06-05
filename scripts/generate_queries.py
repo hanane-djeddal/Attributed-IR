@@ -1,6 +1,6 @@
 import os
 import sys
-import re
+import argparse
 import json
 import time
 
@@ -20,56 +20,64 @@ from src.generation.llms.zephyr import generate_queries
 
 
 def main():
-    set_seed(CONFIG["experiment"]["SEED"])
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--model_name", type=str, default="zephyr", choices=["zephyr", "llama"]
+    )
+    args = parser.parse_args()
+    model_config = CONFIG["langauge_model"][args.model_name]
+
+    set_seed(model_config["SEED"])
     exception = False
     results = None
     execution_time = 0
     try:
-        model_id = CONFIG["experiment"]["model_id"]
+        model_id = model_config["model_id"]
         tokenizer = AutoTokenizer.from_pretrained(
             model_id,
-            cache_dir=CONFIG["experiment"]["cache_dir"],
+            cache_dir=model_config["cache_dir"],
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
-            cache_dir=CONFIG["experiment"]["cache_dir"],
+            cache_dir=model_config["cache_dir"],
             trust_remote_code=True,
             device_map="auto",
         )
 
         ## loading data
-        if CONFIG["experiment"]["dataset"] == "HAGRID":
+        if CONFIG["dataset"] == "HAGRID":
             dataset = datasets.load_dataset(
                 "miracl/hagrid",
                 split="dev",
-                cache_dir=CONFIG["experiment"]["cache_dir"],
             )
         else:
-            print("Loading data : ", CONFIG["experiment"]["path"])
+            print("Loading data : ", CONFIG["data_path"])
             dataset = pd.read_csv(
-                CONFIG["experiment"]["data_path"],
+                CONFIG["data_path"],
                 encoding="latin-1",
                 converters={"outline": eval, "candidats": eval},
             )
 
         results = []
-        prompt = CONFIG["experiment"]["query_gen_prompt"]
+        prompt = CONFIG["prompts"]["query_gen_prompt"]
         start = time.time()
         for row in tqdm(dataset):
             answer = None
-            if CONFIG["experiment"]["include_answer"]:
+            if CONFIG["query_generation"]["include_answer"]:
                 answer = row["answers"][0]["answer"]
             examples = None
-            if CONFIG["experiment"]["setting"] == "fewshot":
-                examples = CONFIG["experiment"]["fewshot_examples"]
-            nb_queries_to_generate = CONFIG["experiment"]["nb_queries_to_generate"]
-            nb_shots = CONFIG["experiment"]["nb_shots"]
+            if CONFIG["query_generation"]["setting"] == "fewshot":
+                examples = CONFIG["query_generation"]["fewshot_examples"]
+            nb_queries_to_generate = CONFIG["query_generation"][
+                "nb_queries_to_generate"
+            ]
+            nb_shots = CONFIG["query_generation"]["nb_shots"]
             queries = generate_queries(
                 row["query"],
                 model,
                 tokenizer,
                 prompt,
-                include_answer=CONFIG["experiment"]["include_answer"],
+                include_answer=CONFIG["query_generation"]["include_answer"],
                 answer=answer,
                 fewshot_examples=examples,
                 nb_queries_to_generate=nb_queries_to_generate,
@@ -93,8 +101,8 @@ def main():
         print("Saving experiment")
 
         experiment_folder = (
-            CONFIG["experiment"]["experiment_path"]
-            + CONFIG["experiment"]["experiment_name"]
+            CONFIG["query_generation"]["experiment_path"]
+            + CONFIG["query_generation"]["experiment_name"]
         )
         if not os.path.exists(experiment_folder):
             os.makedirs(experiment_folder)
@@ -103,13 +111,15 @@ def main():
             exp_config = CONFIG["experiment"]
             results_df = pd.DataFrame.from_dict(results)
             results_df.to_csv(
-                f"{experiment_folder}/{CONFIG['experiment']['results_file']}"
+                f"{experiment_folder}/{CONFIG['query_generation']['results_file']}"
             )
             print(
                 "Result file:",
-                f"{experiment_folder}/{CONFIG['experiment']['results_file']}",
+                f"{experiment_folder}/{CONFIG['query_generation']['results_file']}",
             )
-            config_file = f"{experiment_folder}/{CONFIG['experiment']['config_file']}"
+            config_file = (
+                f"{experiment_folder}/{CONFIG['query_generation']['config_file']}"
+            )
             exp_config["execution_time"] = str(execution_time) + " minutes"
             exp_config["error"] = exception
             with open(config_file, "w") as file:

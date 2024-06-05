@@ -5,19 +5,19 @@ import re
 import pandas as pd
 import os
 import sys
+import argparse
 
-os.environ["HTTP_PROXY"] = "http://hacienda:3128"
-os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
 
+from config import CONFIG
 from tqdm import tqdm
 import torch
 from transformers import BitsAndBytesConfig
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 import logging
-from src.data.hagrid_dataset_tools import get_attributable_answer
+
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -338,24 +338,22 @@ def compute_nli_autoais_dataset(
 
 
 def main():
-    ROOTH_PATH = "/home/djeddal/Documents/Code/evidence-based-QA-research/results/"
-    # RTG gold passages : RTG_gold/zephyr_zs_answer_generation_RTG_gold_passages
-    # RTG user query : RTG_user_query/zephyr_zs_answer_generation_RTG_user_query_10_passages.csv
-    # RTG query gen : RTG_generated_queries/zephyr_zs_answer_generation_RTG_gen_queries_4q4shotspmpt2_rerank_10_passages.csv
-    # GTR : GTR/gtr_posthoc_from_g_fullAnswer.csv
-    results_file = (
-        ROOTH_PATH
-        + "llms/ciKM_generation_experiments/zephyr_zs_hagrid_answer_gen/GTR/zephyr_zs_hagrid_answer_GTR_1_passage_sent_sent.csv"  # zephyr_zs_hagrid_ctxt_citing/zephyr_zs_hagrid_ctxt_citing_correct_offset zephyr_zs_answer_generation_with_retrieved_context_prompt2.csv"
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--architcture",
+        type=str,
+        default="G",
+        choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
     )
+    args = parser.parse_args()
+    experiment = CONFIG["architectures"][args.architcture]
+    results_folder = experiment["experiment_path"] + experiment["experiment_name"]
+
+    results_file = results_folder + "/" + experiment["results_file"]
     results = pd.read_csv(
         results_file,
-        converters={"answer": eval, "quotes": eval, "gold_quotes": eval},
+        converters={"gold_truth": eval, "quotes": eval, "gold_quotes": eval},
     )
-
-    ############# citations overlap:
-    # results = results.apply(citation_overlap, axis=1)
-    # print("source_recall", results["source_recall"].mean())
-    # print("source_precision", results["source_precision"].mean())
 
     scores = compute_nli_autoais_dataset(
         results,
@@ -365,45 +363,5 @@ def main():
     )
     print("Score (sent, src) of generated answer RTG-gen queries:", scores)
 
-    #### autoais (sent,Psg)
-    # scores = compute_nli_autoais_dataset(
-    #     results,
-    #     column_names=["quotes", "processed_generated_text"],
-    #     autoais_citation=False,
-    #     nli_prec_recall=False,
-    # )
-    # print("Score (sent, Psg)of generated answer GTR(post):", scores)
-
-    #### nli prec recall (sent,src)
-    # scores = compute_nli_autoais_dataset(
-    #     results,
-    #     column_names=["quotes", "processed_generated_text"],
-    #     autoais_citation=True,
-    #     nli_prec_recall=True,
-    # )
-    # print(
-    #     "Score NLI precision recall (sent, src) of RTG-user context:",
-    #     scores,
-    # )
-
-    # scores = compute_nli_autoais_dataset(
-    #     results,
-    #     column_names=["gold_quotes", "gold_answer"],
-    #     autoais_citation=True,
-    #     nli_prec_recall=True,
-    # )
-    # print(
-    #     "Score NLI precision recall (sent, src) of gold answer:",
-    #     scores,
-    # )
-
-    # print(results["gold_quotes"][0])
-    # print(results["gold_answer"][0])
-    # scores = compute_nli_autoais_dataset(
-    #     results, column_names=["gold_quotes", "gold_answer"]
-    # )
-    # print("Score (sent, src) of Gold answer:", scores)
-
 
 main()
-# test_extract()

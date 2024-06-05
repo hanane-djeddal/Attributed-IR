@@ -10,41 +10,9 @@ from config import CONFIG
 from src.evalution.retrieval_metrics import *
 
 
-def prepare_gold_dataset(file_name: str) -> pd.DataFrame:
-    """Aggregates all the relevant passages to a query
-    Args:
-        file: the path to gold_truth file which has pairs of (query id, passage_id)
-    Returns:
-        pd.DataFrame: A dataframe with pairs of (query id, list of all relevant passages)
-    """
-    file = open(file_name)
-    lines = file.readlines()
-    gold_truth_passages = []
-    gold_truth_queries = []
-
-    query_id = lines[0].split()[0]
-    passages = []
-
-    for line in lines:
-        inputs = line.split()
-        new_query_id = inputs[0]
-        if query_id != new_query_id:
-            gold_truth_passages.append(passages)
-            gold_truth_queries.append(query_id)
-            passages = []
-            query_id = new_query_id
-        else:
-            passages.append(inputs[2])
-
-    gold_truth = pd.DataFrame.from_dict(
-        {"query_id": gold_truth_queries, "gold_passages": gold_truth_passages}
-    )
-    return gold_truth
-
-
 def main():
-    results_folder = CONFIG["hagrid_miracl"]["results_folder"]
-    results_file = CONFIG["hagrid_miracl"]["results_file"]
+    results_folder = CONFIG["retrieval"]["results_folder"]
+    results_file = CONFIG["retrieval"]["results_file"]
     print("Loadinf data from file: ", results_file)
     results = pd.read_csv(
         results_file, encoding="latin-1", converters={"retrieved_passages": eval}

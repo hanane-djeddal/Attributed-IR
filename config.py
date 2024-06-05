@@ -8,33 +8,34 @@ llama_config = {
     "model_name": "Llama-2-7b-chat-hf",
     "model_id": "meta-llama/Llama-2-7b-chat-hf",
     "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "local_path_to_model": f"{ROOT_PATH}/models_cache/Llama-2-7b-chat-hf/",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
     "max_new_tokens": 4096,
     "repetition_penalty": 1.1,
     "do_sample": False,
     "max_input_length": 2048,
-}
-experiment = {
-    "experiment_name": "llama_2_70b_query_with_full_instruction_no_passage_1st_sent",
-    "experiment_path": f"{ROOT_PATH}/results/llms/",
-    "results_file": "llama_2_70b_full_instruction_no_passage_1st_sent.csv",
-    "config_file": "llama_2_70b_full_instruction_no_passage_1st_sentt_config.json",
-    "support_passages": False,
-    "prompt": "Tell me everything you know about {}. \n ANSWER:",  # "{}.",  # "{}. \n ANSWER:", #"Tell me everything you know about {}. \n ANSWER:",
+    "SEED": 42,
 }
 
-
-hagrid_miracl_config = {
+zephyr_config = {
+    "model_name": "stablelm-zephyr-3b",
+    "model_id": "stabilityai/stablelm-zephyr-3b",
     "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "results_folder": f"{ROOT_PATH}/results/retrieval/miracl_dataset",
-    "results_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/llama2_RTG_10_passages.csv",  # f"{ROOT_PATH}/results/retrieval/miracl_dataset/generated_queries_4shot_4q_lbre_nb_example_pmpt3_desc_rerank.csv", #f"{ROOT_PATH}/results/retrieval/miracl_dataset/gtr_posthoc_from_g_sent_sent.csv",#f"{ROOT_PATH}/results/retrieval/miracl_dataset/generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_rerank.csv",  # f"{ROOT_PATH}/results/retrieval/miracl_dataset/gtr_posthoc_from_g_fullAnswer.csv",
-    "topics_file": f"{ROOT_PATH}/data/miracl_qrels/miracl-v1.0-en_topics_topics.miracl-v1.0-en-dev.tsv",
-    "qrels_file": f"{ROOT_PATH}/data/miracl_qrels/miracl-v1.0-en_qrels_qrels.miracl-v1.0-en-dev.tsv",
-    "corpus_path": f"{ROOT_PATH}/results/retrieval/miracl_dataset/corpus_dictionary.pkl",
-    "generated_queries_file": f"{ROOT_PATH}/results/llms/llama2_zs_query_generation/llama2_manual_select_4shot_4qinE_10qtoGen_prmpt2.csv",  # f"{ROOT_PATH}/results/llms/zephyr_zs_query_generation/zephyr_relevant_4shot_4q_to_generate_prmpt3_4qinE.csv",  # f"{ROOT_PATH}/results/llms/zephyr_zs_query_generation/zephyr_relevant_4shot_4q_to_generate_prmpt2_VaryingQinEx.csv",  # zephyr_zs_query_generation_prompt2.csv",  # zephyr_zs_query_generation.csv",zephyr_fewshot_train_query_generation
-    "posthoc_retrieval_file": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/llama2_zs_hagrid_answer_gen/Generate_vanilla/llama2_zs_answer_generation_generate_vanilla_zs.csv",
-    "query_aggregation": "rerank",  # "rerank",  # "seperate_queries",  # "rerank",  # vote, sort, rerank, simple, summed_vote, mean_vote combSum
+    "max_new_tokens": 4096,
+    "repetition_penalty": 1.1,
+    "temperature": 0.7,
+    "do_sample": False,
+    "max_input_length": 2048,
+    "SEED": 42,
+}
+
+
+retrieval_config = {
+    "cache_dir": f"{ROOT_PATH}/models_cache/",
+    "experiment_name": "retrieval",
+    "experiment_path": f"{ROOT_PATH}/results/",
+    "results_file": "retrieval_user_query.csv",
+    "generated_queries_file": f"{ROOT_PATH}/results/generated_queries_4shot_4q_rerank.csv",
+    "posthoc_retrieval_file": f"{ROOT_PATH}/results/G/generation_generate_vanilla_zs.csv",
+    "query_aggregation": "rerank",  # can be : "rerank",  "seperate_queries", vote, sort, simple, summed_vote, mean_vote, combSum
     "filter_queries": False,
 }
 
@@ -62,132 +63,12 @@ prompts_config = {
     },
 }
 
-exp_zephyr_answer_RTG_gen_queries = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": True,
-    "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/generated_queries_4shot_4q_lbre_nb_example_pmpt3_desc_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_seperate
-    "use_context": True,
-    "nb_passages": 10,
-    "citation": True,
-    "experiment_name": "RTG_generated_queries",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/zephyr_zs_hagrid_answer_gen/",
-    "results_file": "zephyr_zs_answer_generation_RTG_gen_queries_4q_4shots_pmpt3_rerank_10_passages.csv",
-    "config_file": "zephyr_zs_answer_generation_RTG_gen_queries_4q_4shots_pmpt3_rerank_10_passages.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
 
-exp_zephyr_answer_RTG_user_query = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": True,
-    "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_rerank
-    "use_context": True,
-    "nb_passages": 11,
-    "citation": True,
-    "experiment_name": "RTG_user_query",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/zephyr_zs_hagrid_answer_gen/",
-    "results_file": "zephyr_zs_answer_generation_RTG_user_query_10_passages.csv",
-    "config_file": "zephyr_zs_answer_generation_RTG_user_query_10_passages.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
-
-exp_zephyr_answer_with_gold_passages = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": False,
-    "retrieved_passages_file": None,
-    "use_context": True,
-    "nb_passages": None,
-    "citation": True,
-    "experiment_name": "RTG_gold",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/zephyr_zs_hagrid_answer_gen/",
-    "results_file": "zephyr_zs_answer_generation_RTG_gold_passages.csv",
-    "config_file": "zephyr_zs_answer_generation_RTG_gold_passages.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
-
-exp_zephyr_answer_without_context = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": False,
-    "retrieved_passages_file": None,
-    "use_context": False,
-    "nb_passages": None,
-    "citation": False,
-    "experiment_name": "Generate_vanilla",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/zephyr_zs_hagrid_answer_gen/",
-    "results_file": "zephyr_zs_answer_generation_generate_vanilla_zs.csv",
-    "config_file": "zephyr_zs_answer_generation_generate_vanilla_zs.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
-
-exp_zephyr_answer_without_citation_gold = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": False,
-    "retrieved_passages_file": None,  # f"{ROOT_PATH}/results/retrieval/miracl_dataset/devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",
-    "use_context": True,
-    "nb_passages": 10,
-    "citation": False,
-    "experiment_name": "zephyr_zs_answer_generation",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/",
-    "results_file": "zephyr_zs_answer_generation_no_citation.csv",
-    "config_file": "config_zephyr_zs_answer_generation_no_citation.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
-
-exp_zephyr_answer_without_citation = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": True,
-    "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_rerank
-    "use_context": True,
-    "nb_passages": 10,
-    "citation": True,
-    "experiment_name": "RTG_user_query",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/zephyr_zs_hagrid_answer_gen/",
-    "results_file": "zephyr_zs_answer_generation_RTG_user_query_no_cite_10_passages.csv",
-    "config_file": "zephyr_zs_answer_generation_RTG_user_query_no_cite_10_passages.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
-
-
-exp_zephyr_query_gen_fewshots_train_prmt3 = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
+exp_zephyr_query_gen_fewshots = {
+    "experiment_name": "zephyr_zs_query_generation",
+    "experiment_path": f"{ROOT_PATH}/results/",
+    "results_file": "results/generated_queries_4shot_4q.csv",
+    "config_file": "generated_queries_4shot_4q.json",
     "setting": "fewshot",  # zeroshot
     "query_gen_prompt": {
         "system": "You are an assistant that helps the user with their search. I will give you a question, based on the possible answer of the question you will provide queries that will help find documents that support it. Only generate your suggested queries without explanation. The maximum number of queries is {nb_queries}",  # .
@@ -265,147 +146,67 @@ exp_zephyr_query_gen_fewshots_train_prmt3 = {
             ],
         },
     ],
-    "test_examples": False,
-    "experiment_name": "zephyr_zs_query_generation",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/",
-    "results_file": "zephyr_relevant_4shot_4q_to_generate_prmpt3_4qinE.csv",
-    "config_file": "zephyr_relevant_4shot_4q_to_generate_prmpt3_4qinE.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": None,
-    },
-    "description": "Few shot learning examples from Hagrid's train set using a prompt that indicates to use the answer. The example queries are chosen according to their relevance. Nb of queries in the examples is varied but instuction specifies nb of queries to gen",
 }
 
 
-exp_zephyr_answer_GTR = {
-    "model_id": "stabilityai/stablelm-zephyr-3b",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": False,
-    "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/zephyr_gtr_posthoc_from_g_sent_sent.csv",
-    "use_context": False,
-    "nb_passages": None,
-    "citation": False,
-    "experiment_name": "GTR",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/zephyr_zs_hagrid_answer_gen/",
-    "results_file": "zephyr_zs_hagrid_answer_GTR_10_passage_sent_sent.csv",
-    "config_file": "zephyr_zs_hagrid_answer_GTR_10_passage_sent_sent.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
+llms_config = {"zephyr": zephyr_config, "llama": llama_config}
+architectures_config = {
+    "G": {
+        "use_retrieved": False,
+        "retrieved_passages_file": None,
+        "use_context": True,
+        "nb_passages": None,
+        "citation": False,
+        "experiment_name": "G",
+        "experiment_path": f"{ROOT_PATH}/results/",
+        "results_file": "answer_generation_G.csv",
+        "config_file": "answer_generation_G.json",
     },
-}
-
-exp_llama2_answer_RTG_user_query = {
-    "model_name": "Llama-2-7b-chat-hf",
-    "model_id": "meta-llama/Llama-2-7b-chat-hf",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "use_retrieved": True,
-    "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_rerank
-    "use_context": True,
-    "dataset": "HAGRID",
-    "nb_passages": 10,
-    "citation": True,
-    "experiment_name": "RTG_user_query",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/llama2_zs_hagrid_answer_gen/",
-    "results_file": "llama2_zs_answer_generation_RTG_user_query_10_passages.csv",
-    "config_file": "llama2_zs_answer_generation_RTG_user_query_10_passages.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
+    "RTG-gold": {
+        "use_retrieved": False,
+        "retrieved_passages_file": None,
+        "use_context": True,
+        "nb_passages": None,
+        "citation": True,
+        "experiment_name": "RTG_gold",
+        "experiment_path": f"{ROOT_PATH}/results/",
+        "results_file": "answer_generation_RTG_gold_passages.csv",
+        "config_file": "answer_generation_RTG_gold_passages.json",
     },
-}
-
-exp_llama2_answer_without_context = {
-    "model_name": "Llama-2-7b-chat-hf",
-    "model_id": "meta-llama/Llama-2-7b-chat-hf",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "use_retrieved": False,
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "retrieved_passages_file": None,
-    "use_context": False,
-    "nb_passages": None,
-    "citation": False,
-    "experiment_name": "Generate_vanilla",  # "zephyr_zs_hagrid_ctxt_citing",  # "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/llama2_zs_hagrid_answer_gen/",
-    "results_file": "llama2_zs_answer_generation_generate_vanilla_zs.csv",
-    "config_file": "llama2_zs_answer_generation_generate_vanilla_zs.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
+    "RTG-vanilla": {
+        "use_retrieved": True,
+        "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/retrieval_user_query.csv",
+        "use_context": True,
+        "nb_passages": 5,
+        "citation": True,
+        "experiment_name": "RTG_vanilla",
+        "experiment_path": f"{ROOT_PATH}/results/",
+        "results_file": "generation_RTG_vanilla_5_passages.csv",
+        "config_file": "generation_RTG_vanilla_5_passages.json",
     },
-}
-
-exp_llama2_answer_with_gold_passages = {
-    "model_name": "Llama-2-7b-chat-hf",
-    "model_id": "meta-llama/Llama-2-7b-chat-hf",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "use_retrieved": False,
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "retrieved_passages_file": None,
-    "use_context": True,
-    "nb_passages": None,
-    "citation": True,
-    "experiment_name": "RTG_gold",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/llama2_zs_hagrid_answer_gen/",
-    "results_file": "llama2_zs_answer_generation_RTG_gold_passages.csv",
-    "config_file": "llama2_zs_answer_generation_RTG_gold_passages.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
-
-exp_llama2_answer_GTR = {
-    "model_name": "Llama-2-7b-chat-hf",
-    "model_id": "meta-llama/Llama-2-7b-chat-hf",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "use_retrieved": False,
-    "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/llama2_gtr_posthoc_from_g_sent_sent.csv",
-    "use_context": False,
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "nb_passages": None,
-    "citation": False,
-    "experiment_name": "GTR",  # "llama2_zs_hagrid_ctxt_citing",  # "llama2_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/llama2_zs_hagrid_answer_gen/",
-    "results_file": "llama2_zs_hagrid_answer_GTR_10_passage_sent_sent.csv",
-    "config_file": "llama2_zs_hagrid_answer_GTR_10_passage_sent_sent.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
-    },
-}
-
-exp_llama2_answer_RTG_gen_queries = {
-    "model_name": "Llama-2-7b-chat-hf",
-    "model_id": "meta-llama/Llama-2-7b-chat-hf",
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "use_retrieved": True,
-    "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/miracl_dataset/generated_queries_4shot_4q_lbre_nb_example_pmpt3_desc_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_seperate
-    "use_context": True,
-    "SEED": 42,
-    "dataset": "HAGRID",
-    "nb_passages": 10,
-    "citation": True,
-    "experiment_name": "RTG_generated_queries",  # "llama2_zs_hagrid_ctxt_citing",  # "llama2_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/llms/ciKM_generation_experiments/llama2_zs_hagrid_answer_gen/",
-    "results_file": "llama2_zs_answer_generation_RTG_gen_queries_4q_4shots_pmpt3_rerank_10_passages.csv",
-    "config_file": "llama2_zs_answer_generation_RTG_gen_queries_4q_4shots_pmpt3_rerank_10_passages.json",
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
+    "RTG-query-gen": {
+        "use_retrieved": True,
+        "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_seperate
+        "use_context": True,
+        "nb_passages": 5,
+        "citation": True,
+        "experiment_name": "RTG_generated_queries",
+        "experiment_path": f"{ROOT_PATH}/results/",
+        "results_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_5_passages.csv",
+        "config_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_5_passages.json",
     },
 }
 
 CONFIG: Dict = {
-    "experiment": exp_llama2_answer_GTR,  # RL_reward_answergen_exp,  # exp_zephyr_answer_without_citation,  # exp_zephyr_query_gen_fewshots_test,  # exp_zephyr_query_gen_fewshots,  # exp_zephyr_answer_without_citation,  # exp_zephyr_answer_with_retrieved_passages,  # experiment,
+    "architectures": architectures_config,
+    "langauge_model": llms_config,
+    "dataset": "HAGRID",
+    "data_path": None,
     "prompts": prompts_config,
-    "hagrid_miracl": hagrid_miracl_config,
+    "retrieval": retrieval_config,
+    "query_generation": exp_zephyr_query_gen_fewshots,
+    "results_columns": {
+        "prediction": "generated_text",
+        "reference": "gold_truth",
+    },
 }

@@ -1,6 +1,7 @@
 import datasets
 import re
 
+
 def load_dataset(split="train"):
     hagrid = datasets.load_dataset("miracl/hagrid", split=split)
     return hagrid
@@ -13,7 +14,7 @@ def prepare_contexts(context_list, retrieved=False, citation=True):
     if retrieved:
         if citation:
             context_text = [
-                "[" + str((i + 1)) + "] " + context_list[i]
+                "[" + str((i + 1)) + "] " + context_list[i]["text"]
                 for i in range(len(context_list))
             ]
         else:
@@ -64,29 +65,33 @@ def get_attributable_answer(answers, text_only=True):
         return final_answer["answer"]
     return final_answer
 
-def get_all_answers(answers, text_only=True, with_citiations = False): # fonction de raouf
-    """
-        fonction return all the reference answers (type list) for each answers
 
-        text_only : if True we return only the reference answers text else all structure
-        with_citiations : if False we remove citiations from reference answers text else we don't
+def get_all_answers(
+    answers, text_only=True, with_citiations=False
+):  # fonction de raouf
+    """
+    fonction return all the reference answers (type list) for each answers
+
+    text_only : if True we return only the reference answers text else all structure
+    with_citiations : if False we remove citiations from reference answers text else we don't
 
     """
 
     expression = r"\[\d+(?:,\s*\d+)*\]"
 
-    if text_only :
-        if not with_citiations :
+    if text_only:
+        if not with_citiations:
             return [re.sub(expression, "", s["answer"]) for s in answers]
-        else : 
+        else:
             return [s["answer"] for s in answers]
-    else : 
-        if not with_citiations :
-            for s in answers :
+    else:
+        if not with_citiations:
+            for s in answers:
                 s["answer"] = re.sub(expression, "", s["answer"])
-            
+
         return answers
-    
+
+
 def get_non_attributable_answers(df):
     """
     Analysis answers in Hagrid. Returns list of queries with no attributable answers (not even attributed sentences), etc

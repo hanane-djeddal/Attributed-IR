@@ -3,6 +3,7 @@ from nltk import sent_tokenize
 
 import re
 import pandas as pd
+import argparse
 import os
 import sys
 
@@ -335,12 +336,18 @@ def compute_nli_autoais_dataset(
 
 
 def main():
-    results_folder = (
-        CONFIG["experiment"]["experiment_path"]
-        + CONFIG["experiment"]["experiment_name"]
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--architcture",
+        type=str,
+        default="G",
+        choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
     )
+    args = parser.parse_args()
+    experiment = CONFIG["architectures"][args.architcture]
+    results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
-    results_file = results_folder + "/" + CONFIG["experiment"]["results_file"]
+    results_file = results_folder + "/" + experiment["results_file"]
     results = pd.read_csv(
         results_file,
         converters={"gold_truth": eval, "quotes": eval, "gold_quotes": eval},

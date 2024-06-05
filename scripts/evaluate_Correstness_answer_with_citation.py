@@ -2,8 +2,9 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+import argparse
 from tabulate import tabulate
-import json 
+import json
 
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
@@ -16,15 +17,21 @@ from src.data.hagrid_dataset_tools import get_attributable_answer, get_all_answe
 
 
 def main():
-
-    results_folder = (
-        CONFIG["experiment"]["experiment_path"]
-        + CONFIG["experiment"]["experiment_name"]
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--architcture",
+        type=str,
+        default="G",
+        choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
     )
-    
-    results_file = results_folder + "/" + CONFIG["experiment"]["results_file"]
-    generated_column = CONFIG["experiment"]["results_columns"]["prediction"]
-    reference_column = CONFIG["experiment"]["results_columns"]["reference"]
+    args = parser.parse_args()
+    experiment = CONFIG["architectures"][args.architcture]
+
+    results_folder = experiment["experiment_path"] + experiment["experiment_name"]
+
+    results_file = results_folder + "/" + experiment["results_file"]
+    generated_column = CONFIG["results_columns"]["prediction"]
+    reference_column = CONFIG["results_columns"]["reference"]
     results = pd.read_csv(
         results_file, converters={reference_column: eval}, index_col=[0]
     )
@@ -49,13 +56,17 @@ def main():
         citation_pattern, "", regex=True
     )
 
-    # add all answer without citiations 
-    results['all_gold_answer'] = results[reference_column].apply(get_all_answers)
+    # add all answer without citiations
+    results["all_gold_answer"] = results[reference_column].apply(get_all_answers)
 
     print("example gold answer without citations: ", results["gold_answer"][0], "\n")
-    print("example all gold answer without citations: ", results['all_gold_answer'][0], "\n")
+    print(
+        "example all gold answer without citations: ",
+        results["all_gold_answer"][0],
+        "\n",
+    )
 
-    if CONFIG["experiment"]["citation"]:
+    if experiment["citation"]:
         results["processed_generated_text"] = results[
             "processed_generated_text"
         ].str.replace(citation_pattern, "", regex=True)
@@ -83,11 +94,12 @@ def main():
     )  # Huggingface old version of rouge that details precision/recall/fscore
     print("rouge score:", rouge_scores)
     print("loading bert metric")
-    bert_scores = bert_score(results[generated_column], results[reference_column], CONFIG)
-    #bleu score
+    bert_scores = bert_score(
+        results[generated_column], results[reference_column], CONFIG
+    )
+    # bleu score
     print("load bleu score")
-    bleu_score = bleu(results[generated_column], results[reference_column], CONFIG )
-
+    bleu_score = bleu(results[generated_column], results[reference_column], CONFIG)
 
     # with all reference answer
 
@@ -99,8 +111,9 @@ def main():
     )
 
     print("loading bert metric, all")
-    bert_scores_all = bert_metric_all(results[generated_column], results[reference_column], CONFIG)
-
+    bert_scores_all = bert_metric_all(
+        results[generated_column], results[reference_column], CONFIG
+    )
 
     performance = {
         "Rouge": {
@@ -123,14 +136,14 @@ def main():
             "Recall": np.mean(rouge_scores_ov_all["recall"]),
             "fmeasure": np.mean(rouge_scores_ov_all["fmeasure"]),
         },
-        "Bert All" : {
+        "Bert All": {
             "Precision": np.mean(bert_scores_all["precision"]),
             "Recall": np.mean(bert_scores_all["recall"]),
             "fmeasure": np.mean(bert_scores_all["f1"]),
-        }
+        },
     }
 
-    print(CONFIG["experiment"]["experiment_name"])
+    print(experiment["experiment_name"])
 
     performance_df = pd.DataFrame(performance).T
     print(f"Aggregated metrics for the complete dataset")
@@ -138,23 +151,24 @@ def main():
     performance_df.to_csv(os.path.join(results_folder, "performance_bert.csv"))
 
     print("load bleu score all")
-    bleu_score_all = bleu_all(results[generated_column], results[reference_column], CONFIG )
+    bleu_score_all = bleu_all(
+        results[generated_column], results[reference_column], CONFIG
+    )
 
     performance_bleu = {
         "Bleu ": {
-            "Precision": bleu_score['bleu'],
-            "1g":  bleu_score['precisions'][0],
-            "2g": bleu_score['precisions'][1],
-            "3g": bleu_score['precisions'][2],
-            "4g": bleu_score['precisions'][3], 
+            "Precision": bleu_score["bleu"],
+            "1g": bleu_score["precisions"][0],
+            "2g": bleu_score["precisions"][1],
+            "3g": bleu_score["precisions"][2],
+            "4g": bleu_score["precisions"][3],
         },
-
         "Bleu All": {
-            "Precision": bleu_score_all['bleu'],
-            "1g":  bleu_score_all['precisions'][0],
-            "2g": bleu_score_all['precisions'][1],
-            "3g": bleu_score_all['precisions'][2],
-            "4g": bleu_score_all['precisions'][3], 
+            "Precision": bleu_score_all["bleu"],
+            "1g": bleu_score_all["precisions"][0],
+            "2g": bleu_score_all["precisions"][1],
+            "3g": bleu_score_all["precisions"][2],
+            "4g": bleu_score_all["precisions"][3],
         },
     }
 
@@ -162,14 +176,13 @@ def main():
     print(f"Aggregated metrics for the complete dataset")
     print(tabulate(performance_df, headers="keys", tablefmt="presto"))
 
-    performance = performance_bleu | performance 
+    performance = performance_bleu | performance
 
-    results_file = results_file.replace('.csv', '_perf_answer.json')
+    results_file = results_file.replace(".csv", "_perf_answer.json")
 
-    with open(results_file, 'w') as f:
-        json.dump(performance, f, indent=4) 
-        
+    with open(results_file, "w") as f:
+        json.dump(performance, f, indent=4)
+
 
 if __name__ == "__main__":
-     main()
-    
+    main()

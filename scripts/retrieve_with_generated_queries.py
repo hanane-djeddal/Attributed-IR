@@ -1,8 +1,7 @@
 import os
 import sys
+import datasets
 
-
-import torch
 import pandas as pd
 import time
 from tqdm import tqdm
@@ -12,7 +11,6 @@ sys.path.append(ROOT_PATH)
 
 from config import CONFIG
 from src.retrieval.retrieve_bm25_monoT5 import Retriever
-from src.data.miracl_tools import prepare_qrels_data
 from src.models.monoT5 import MonoT5
 from src.retrieval.query_aggregation import (
     sort_all_scores,
@@ -27,14 +25,10 @@ from src.retrieval.query_aggregation import (
 def main():
     start = time.time()
 
-    print("Loading queries from MIRACL topics dataset ")
+    dataset = datasets.load_dataset("miracl/hagrid", split="dev")
+    queries_dataset = pd.DataFrame(queries_dataset)
 
-    queries_dataset = prepare_qrels_data(
-        topics_file=CONFIG["hagrid_miracl"]["topics_file"],
-        qrels_file=CONFIG["hagrid_miracl"]["qrels_file"],
-    )
-
-    queries_file = CONFIG["hagrid_miracl"]["generated_queries_file"]
+    queries_file = CONFIG["retrieval"]["generated_queries_file"]
     print("Loading generated queries from :", queries_file)
     gen_queries = pd.read_csv(
         queries_file, converters={"generated_text": eval}, index_col=0
@@ -45,7 +39,7 @@ def main():
     queries_dataset = queries_dataset.merge(gen_queries, on="query")
 
     #### filtering queries
-    if CONFIG["hagrid_miracl"]["filter_queries"]:
+    if CONFIG["retrieval"]["filter_queries"]:
         print("Filtering queries")
         queries_dataset["generated_queries"] = queries_dataset.apply(
             lambda x: query_filter(x["query"], x["generated_queries"]), axis=1
@@ -55,18 +49,14 @@ def main():
             "generated_queries"
         ].apply(lambda x: [q[1:] for q in x if q[0] == " "])
 
-    print("Indexing corpus with BM25")
     ranker = Retriever(index="miracl-v1.0-en")
-
-    print("loading models : MonoT5")
-    torch.set_grad_enabled(False)
 
     monot5 = MonoT5(device="cuda")
 
     results = []
 
     print("Retrieval")
-    aggregation = CONFIG["hagrid_miracl"]["query_aggregation"]
+    aggregation = CONFIG["retrieval"]["query_aggregation"]
     dataset = queries_dataset
     for _, row in tqdm(dataset.iterrows()):
         query_id = row["query_id"]
@@ -112,7 +102,9 @@ def main():
                         "retrieved_ids": ids,
                         "retrieved_passages": [],
                         "score": score,
-                        "reference_ids": row["relevant_docids"],
+                        "reference_ids": [q["docid"] for q in row["quotes"]],
+                        "answers": row["answers"],
+                        "gold_quotes": row["quotes"],
                     }
                 )
                 ids, text, score = simple_retrieval(query, ranker)
@@ -125,16 +117,18 @@ def main():
                 "retrieved_ids": ids,
                 "retrieved_passages": text,
                 "score": score,
-                "reference_ids": row["relevant_docids"],
+                "reference_ids": [q["docid"] for q in row["quotes"]],
+                "answers": row["answers"],
+                "gold_quotes": row["quotes"],
             }
         )
     end = time.time()
     print("time: ", end - start)
     results_df = pd.DataFrame.from_dict(results)
-    results_df.to_csv(CONFIG["hagrid_miracl"]["results_file"])
+    results_df.to_csv(CONFIG["retrieval"]["results_file"])
     print(
         "Result file:",
-        CONFIG["hagrid_miracl"]["results_file"],
+        CONFIG["retrieval"]["results_file"],
     )
 
 

@@ -16,5 +16,8 @@ __pycache__
 *.tsv
 *.pkl
 *.dat
+*.lock
+
+models_cache
 
 
