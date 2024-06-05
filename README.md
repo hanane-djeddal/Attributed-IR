@@ -58,7 +58,7 @@ First generate the queries:
 ```
 python generate_queries.py  --model_name zephyr
 ```
-Then we retrieve using the generated queries. By default the aggregation method is "rerank" but can modified in `config.py`.
+Then we retrieve using the generated queries. By default the aggregation method is "rerank" but can be modified in `config.py`.
 
 ```
 python retrieve_with_generated_queries.py
