@@ -24,17 +24,23 @@ conda env create -f attributed-ir.yml
 ```
 ## Architectures
 
-The different architectures of LLM can be found in `scripts`. You can update `config.py` with the specific setting. (more details soon)
+The different architectures of LLM can be found in `scripts`. The different configurations are already stores in `config.py` but you adjust as needed.
 #### Generate (G)
 
-A simple run of the script :
+A simple run of the script specifying the architecture and the model :
 
 ```
-python generate_answer.py
+python generate_answer.py  --architcture G --model_name zephyr
 ```
 
 #### Retrieve Then Generate (RTG)
-
+For this architecture, we need first to retrieve the documents, then use them for answer generation
+###### RTG-gold
+If the dataset has annotated relevant documents i.e. gold documents,  we can run the generation directly without retrieval.
+```
+python generate_answer.py  --architcture RTG-gold --model_name zephyr
+```
+###### RTG-vanilla
 First run the retrieval script :
 
 ```
@@ -43,11 +49,28 @@ python retrieve.py
 
 Once the retrieval is done, update `config.py` with the name of the generated answer and the experiment to the RTG setting. You can then run : 
 ```
-python generate_answer.py
+python generate_answer.py --architcture RTG-vanilla --model_name zephyr
+```
+
+###### RTG-query-gen
+First generate the queries:
+
+```
+python generate_queries.py  --model_name zephyr
+```
+Then we retrieve using the generated queries. By default the aggregation method is "rerank" but can modified in `config.py`.
+
+```
+python retrieve_with_generated_queries.py
+```
+
+Then run the answer generation script specifying the architecture.
+```
+python generate_answer.py  --architcture RTG-query-gen --model_name zephyr
 ```
 
 #### Generate Then Retrieve (GTR)
-You have to first run the experiment with the architecture "Generate". Then run :
+If you have not run the experiment G (Generate), you have to do so. Then run :
 
 ```
 python retrieve_posthoc_gtr.py
@@ -56,10 +79,9 @@ python retrieve_posthoc_gtr.py
 
 
 
-
 ## Evaluation
 
-We evaluate both the correctness and attribution of the answer. We take in consideration the case where multiple answers are possible.
+We evaluate both the correctness and attribution of the answer. We take in consideration the case where multiple answers are possible. We also offer the evaluation of retrieval results
 
 To evaluate correctness run 
 
@@ -67,10 +89,16 @@ To evaluate correctness run
 python evaluate_Correstness_answer_with_citation.py
 ```
 
-For Attribution metrics : 
+For attribution metrics : 
 
 ```
 python citations_eval.py
+```
+
+For retrieval:
+
+```
+python evaluate_retrieval.py
 ```
 
 ## Results
