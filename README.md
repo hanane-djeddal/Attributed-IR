@@ -64,7 +64,7 @@ Then we retrieve using the generated queries. By default the aggregation method 
 python retrieve_with_generated_queries.py
 ```
 
-Then run the answer generation script specifying the architecture.
+Then run the answer generation script specifying the architecture .
 ```
 python generate_answer.py  --architcture RTG-query-gen --model_name zephyr
 ```
