@@ -33,6 +33,7 @@ retrieval_config = {
     "experiment_name": "retrieval",
     "experiment_path": f"{ROOT_PATH}/results/",
     "results_file": "retrieval_user_query.csv",
+    "query_gen_results_file": "generated_queries_4shot_4q_rerank.csv",
     "generated_queries_file": f"{ROOT_PATH}/results/generated_queries_4shot_4q_rerank.csv",
     "posthoc_retrieval_file": f"{ROOT_PATH}/results/G/generation_generate_vanilla_zs.csv",
     "query_aggregation": "rerank",  # can be : "rerank",  "seperate_queries", vote, sort, simple, summed_vote, mean_vote, combSum

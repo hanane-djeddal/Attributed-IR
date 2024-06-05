@@ -125,10 +125,19 @@ def main():
     end = time.time()
     print("time: ", end - start)
     results_df = pd.DataFrame.from_dict(results)
-    results_df.to_csv(CONFIG["retrieval"]["results_file"])
+
+    experiment_folder = (
+        CONFIG["retrieval"]["experiment_path"] + CONFIG["retrieval"]["experiment_name"]
+    )
+    if not os.path.exists(experiment_folder):
+        os.makedirs(experiment_folder)
+        print("New directory for experiment is created: ", experiment_folder)
+    results_df.to_csv(
+        f"{experiment_folder}/{CONFIG['retrieval']['query_gen_results_file']}"
+    )
     print(
-        "Result file:",
-        CONFIG["retrieval"]["results_file"],
+        "Results saved in",
+        f"{experiment_folder}/{CONFIG['retrieval']['query_gen_results_file']}",
     )
 
 
