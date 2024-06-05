@@ -35,12 +35,12 @@ python generate_answer.py  --architcture G --model_name zephyr
 
 #### Retrieve Then Generate (RTG)
 For this architecture, we need first to retrieve the documents, then use them for answer generation
-###### RTG-gold
+##### RTG-gold
 If the dataset has annotated relevant documents i.e. gold documents,  we can run the generation directly without retrieval.
 ```
 python generate_answer.py  --architcture RTG-gold --model_name zephyr
 ```
-###### RTG-vanilla
+##### RTG-vanilla
 First run the retrieval script :
 
 ```
@@ -52,7 +52,7 @@ Once the retrieval is done, update `config.py` with the name of the generated an
 python generate_answer.py --architcture RTG-vanilla --model_name zephyr
 ```
 
-###### RTG-query-gen
+##### RTG-query-gen
 First generate the queries:
 
 ```
