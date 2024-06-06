@@ -113,7 +113,126 @@ quotes : documents used as context to generate the answer (Not needed for archit
 
 ## Results
 
-Coming soon.
+*Gold answer* reports the citation quality in the gold answer using automatic metrics. Since the scenario *G* does not include citations, only answer correctness is evaluated. Since the generated answer in scenario *GTR* is the same as in scenario *G*, the answer correctness measures are equal. The best performance measures are in **bold**.
+<sub><sup>
+<table >
+  <tr>
+    <th rowspan="2">   Scenarios   </th> 
+    <th colspan="7">Correctness</th>
+    <th colspan="6">Citations</th>
+  </tr>
+  <tr>
+    <th>BLEU</th>
+    <th>ROUGE Prec</th>
+    <th>ROUGE Rec</th>
+    <th>ROUGE F-score</th>
+    <th>BertScore Prec</th>
+    <th>BertScore Rec</th>
+    <th>BertScore F-score</th>
+    <th>Overlap Prec</th>
+    <th>Overlap Rec</th>
+    <th>AutoAIS Cit.</th>
+    <th>AutoAIS Pssg.</th>
+    <th>NLI Prec.</th>
+    <th>NLI Rec.</th>
+  </tr>
+  <tr>
+    <td>Gold answer</td>
+    <td></td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>87.97</td>
+    <td>89.21</td>
+    <td>83.65</td>
+    <td>79.80</td>
+  </tr>
+  <tr>
+    <td>G</td>
+    <td>11.06</td>
+    <td>30.41</td>
+    <td>46.08</td>
+    <td>31.58</td>
+    <td>87.88</td>
+    <td>90.02</td>
+    <td>88.87</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>RTG - gold</td>
+    <td><b>28.22</b></td>
+    <td><b>44.00</b></td>
+    <td><b>63.81</b></td>
+    <td><b>46.72</b></td>
+    <td><b>90.02</b></td>
+    <td><b>93.36</b></td>
+    <td><b>91.69</b></td>
+    <td><b>75.29</b></td>
+    <td><b>68.89</b></td>
+    <td><b>42.81</b></td>
+    <td><b>80.67</b></td>
+    <td>56.55</td>
+    <td><i>42.31</i></td>
+  </tr>
+  <tr>
+    <td>RTG - vanilla (2-psg)</td>
+    <td><i>18.44</i></td>
+    <td><i>33.83</i></td>
+    <td><i>56.40</i></td>
+    <td><i>36.65</i></td>
+    <td><i>87.94</i></td>
+    <td>91.52</td>
+    <td><i>89.63</i></td>
+    <td><i>36.17</i></td>
+    <td><i>32.69</i></td>
+    <td>41.86</td>
+    <td>78.95</td>
+    <td><i>57.90</i></td>
+    <td>41.63</td>
+  </tr>
+  <tr>
+    <td>RTG - query-gen (2-psg)</td>
+    <td>18.33</td>
+    <td>33.58</td>
+    <td>56.13</td>
+    <td>36.43</td>
+    <td>87.89</td>
+    <td><i>91.55</i></td>
+    <td>89.62</td>
+    <td>35.89</td>
+    <td>32.46</td>
+    <td><i>42.68</i></td>
+    <td><i>80.10</i></td>
+    <td><b>59.59</b></td>
+    <td><b>42.48</b></td>
+  </tr>
+  <tr>
+    <td>GTR (1-psg)</td>
+    <td>11.06</td>
+    <td>30.41</td>
+    <td>46.08</td>
+    <td>31.58</td>
+    <td>87.88</td>
+    <td>90.02</td>
+    <td>88.87</td>
+    <td>45.53</td>
+    <td>30.53</td>
+    <td>26.69</td>
+    <td>26
+    </td>
+  </tr>
+</table>
+</sub></sup>
 
 
 ## Contact
