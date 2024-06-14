@@ -25,7 +25,7 @@ conda env create -f attributed-ir.yml
 ```
 ## Architectures
 
-The different architectures of LLM can be found in `scripts`. The different configurations are already stores in `config.py` but you adjust as needed.
+The different architectures of LLM can be found in `scripts`. The configurations are already stored in `config.py` but you can adjust as needed.
 #### Generate (G)
 
 A simple run of the script specifying the architecture and the model :
@@ -39,7 +39,7 @@ For this architecture, we need first to retrieve the documents, then use them fo
 ##### RTG-gold
 If the dataset has annotated relevant documents i.e. gold documents,  we can run the generation directly without retrieval.
 ```
-python generate_answer.py  --architcture RTG-gold --model_name zephyr
+python generate_answer.py  --architcture RTG-gold --model_name zephyr 
 ```
 ##### RTG-vanilla
 First run the retrieval script :
@@ -48,7 +48,7 @@ First run the retrieval script :
 python retrieve.py
 ```
 
-Once the retrieval is done, update `config.py` with the name of the generated answer and the experiment to the RTG setting. You can then run : 
+Once the retrieval is done, you can update `config.py` with the name of the generated answer . You can then run : 
 ```
 python generate_answer.py --architcture RTG-vanilla --model_name zephyr
 ```
