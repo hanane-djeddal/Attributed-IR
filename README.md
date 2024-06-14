@@ -8,7 +8,7 @@ Search engines are now adopting generative approaches to provide  answers along 
 1. [Installation](#installation)
 2. [Architectures](#architectures)
 3. [Evaluation](#evaluation)
-4. [Custom Data](#customdata)
+4. [Custom Data](#custom-data)
 5. [Results](#results)
 6. [Contact](#contact)
 ## Installation
