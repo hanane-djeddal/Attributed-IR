@@ -8,7 +8,7 @@ Search engines are now adopting generative approaches to provide  answers along 
 1. [Installation](#installation)
 2. [Architectures](#architectures)
 3. [Evaluation](#evaluation)
-4. [Custom Data](#customData)
+4. [Custom Data](#custom-data)
 5. [Results](#results)
 6. [Contact](#contact)
 ## Installation
@@ -25,7 +25,7 @@ conda env create -f attributed-ir.yml
 ```
 ## Architectures
 
-The different architectures of LLM can be found in `scripts`. The different configurations are already stores in `config.py` but you adjust as needed.
+The different architectures of LLM can be found in `scripts`. The configurations are already stored in `config.py` but you can adjust as needed.
 #### Generate (G)
 
 A simple run of the script specifying the architecture and the model :
@@ -39,7 +39,7 @@ For this architecture, we need first to retrieve the documents, then use them fo
 ##### RTG-gold
 If the dataset has annotated relevant documents i.e. gold documents,  we can run the generation directly without retrieval.
 ```
-python generate_answer.py  --architcture RTG-gold --model_name zephyr
+python generate_answer.py  --architcture RTG-gold --model_name zephyr 
 ```
 ##### RTG-vanilla
 First run the retrieval script :
@@ -48,7 +48,7 @@ First run the retrieval script :
 python retrieve.py
 ```
 
-Once the retrieval is done, update `config.py` with the name of the generated answer and the experiment to the RTG setting. You can then run : 
+Once the retrieval is done, you can update `config.py` with the name of the generated answer . You can then run : 
 ```
 python generate_answer.py --architcture RTG-vanilla --model_name zephyr
 ```
@@ -101,7 +101,9 @@ For retrieval:
 ```
 python evaluate_retrieval.py
 ```
+
 ## Custom Data
+
 We use HAGRID dataset to run our experiments, but this code can be easily applicable to other datasets from huggingfce or from custom files, provided that the dataset contains these fields: 
 
 query : the question or the query
@@ -109,6 +111,8 @@ query : the question or the query
 answers : list of possible gold answers (can be one or more)
 
 quotes : documents used as context to generate the answer (Not needed for architecture Generate (G))
+
+You can specify the name of your data file in `config.py`> `data_path` and change what each column is called in the dataset in `config.py`> `column_names`
 
 
 ## Results
