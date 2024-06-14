@@ -24,16 +24,21 @@ def main():
         default="G",
         choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
     )
+    parser.add_argument(
+        "--results_file",
+        type=str,
+        default=None,
+    )
     args = parser.parse_args()
     experiment = CONFIG["architectures"][args.architcture]
 
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
-    results_file = results_folder + "/" + experiment["results_file"]
-    generated_column = CONFIG["results_columns"]["prediction"]
-    reference_column = CONFIG["results_columns"]["reference"]
+    results_file = args.results_file if args.results_file else (  results_folder + "/" + experiment["results_file"])
+    generated_column = CONFIG["column_names"]["prediction"]
+    reference_column = CONFIG["column_names"]["reference"]
     results = pd.read_csv(
-        results_file, converters={reference_column: eval}, index_col=[0]
+        results_file, index_col=[0], #converters={reference_column: eval}
     )
 
     ## processing the generated text to remove system prompt
@@ -47,24 +52,28 @@ def main():
     ].str.replace(pattern, "", regex=True)
     print("example processed text : ", results["processed_generated_text"][0], "\n")
 
-    results["gold_answer"] = results[reference_column].apply(get_attributable_answer)
-    results = results[results["gold_answer"].str.len() > 0]
+    if CONFIG["dataset"] == "HAGRID":
+        results["gold_answer"] = results[reference_column].apply(get_attributable_answer)
+        results = results[results["gold_answer"].str.len() > 0]
+    else:
+        results["gold_answer"] = results[reference_column]
+
 
     ### remove citiations from answer
     citation_pattern = r"\[\d+(?:,\s*\d+)*\]"
     results["gold_answer"] = results["gold_answer"].str.replace(
         citation_pattern, "", regex=True
     )
-
-    # add all answer without citiations
-    results["all_gold_answer"] = results[reference_column].apply(get_all_answers)
+    if CONFIG["dataset"] == "HAGRID":
+        # add all answer without citiations
+        results["all_gold_answer"] = results[reference_column].apply(get_all_answers)
+        print(
+            "example all gold answer without citations: ",
+            results["all_gold_answer"][0],
+            "\n",
+        )
 
     print("example gold answer without citations: ", results["gold_answer"][0], "\n")
-    print(
-        "example all gold answer without citations: ",
-        results["all_gold_answer"][0],
-        "\n",
-    )
 
     if experiment["citation"]:
         results["processed_generated_text"] = results[
@@ -100,20 +109,22 @@ def main():
     # bleu score
     print("load bleu score")
     bleu_score = bleu(results[generated_column], results[reference_column], CONFIG)
+    rouge_scores_ov_all = None
+    bert_scores_all = None
+    if CONFIG["dataset"] == "HAGRID":
+        # with all reference answer
 
-    # with all reference answer
+        reference_column = "all_gold_answer"
 
-    reference_column = "all_gold_answer"
+        print("loading rouge metric dataset version, all")
+        rouge_scores_ov_all = rouge_detailed_ov_all(
+            results[generated_column], results[reference_column], CONFIG
+        )
 
-    print("loading rouge metric dataset version, all")
-    rouge_scores_ov_all = rouge_detailed_ov_all(
-        results[generated_column], results[reference_column], CONFIG
-    )
-
-    print("loading bert metric, all")
-    bert_scores_all = bert_metric_all(
-        results[generated_column], results[reference_column], CONFIG
-    )
+        print("loading bert metric, all")
+        bert_scores_all = bert_metric_all(
+            results[generated_column], results[reference_column], CONFIG
+        )
 
     performance = {
         "Rouge": {
@@ -149,11 +160,12 @@ def main():
     print(f"Aggregated metrics for the complete dataset")
     print(tabulate(performance_df, headers="keys", tablefmt="presto"))
     performance_df.to_csv(os.path.join(results_folder, "performance_bert.csv"))
-
-    print("load bleu score all")
-    bleu_score_all = bleu_all(
-        results[generated_column], results[reference_column], CONFIG
-    )
+    bleu_score_all = None
+    if CONFIG["dataset"] == "HAGRID":
+        print("load bleu score all")
+        bleu_score_all = bleu_all(
+            results[generated_column], results[reference_column], CONFIG
+        )
 
     performance_bleu = {
         "Bleu ": {

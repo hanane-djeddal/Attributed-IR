@@ -22,10 +22,15 @@ zephyr_config = {
     "max_new_tokens": 4096,
     "repetition_penalty": 1.1,
     "temperature": 0.7,
-    "do_sample": False,
+    "do_sample": True,
     "max_input_length": 2048,
     "SEED": 42,
 }
+
+evaluation_config = {
+    "cache_dir": f"{ROOT_PATH}/models_cache/",
+}
+
 
 
 retrieval_config = {
@@ -154,9 +159,10 @@ llms_config = {"zephyr": zephyr_config, "llama": llama_config}
 architectures_config = {
     "G": {
         "use_retrieved": False,
+        "hagrid_gold":False,
         "retrieved_passages_file": None,
-        "use_context": True,
-        "nb_passages": None,
+        "use_context": False,
+        "nb_passages": 0,
         "citation": False,
         "experiment_name": "G",
         "experiment_path": f"{ROOT_PATH}/results/",
@@ -165,9 +171,10 @@ architectures_config = {
     },
     "RTG-gold": {
         "use_retrieved": False,
+        "hagrid_gold":True,
         "retrieved_passages_file": None,
         "use_context": True,
-        "nb_passages": None,
+        "nb_passages": 5,
         "citation": True,
         "experiment_name": "RTG_gold",
         "experiment_path": f"{ROOT_PATH}/results/",
@@ -176,6 +183,7 @@ architectures_config = {
     },
     "RTG-vanilla": {
         "use_retrieved": True,
+        "hagrid_gold":False,
         "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/retrieval_user_query.csv",
         "use_context": True,
         "nb_passages": 5,
@@ -187,6 +195,7 @@ architectures_config = {
     },
     "RTG-query-gen": {
         "use_retrieved": True,
+        "hagrid_gold":False,
         "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_seperate
         "use_context": True,
         "nb_passages": 5,
@@ -201,13 +210,16 @@ architectures_config = {
 CONFIG: Dict = {
     "architectures": architectures_config,
     "langauge_model": llms_config,
-    "dataset": "HAGRID",
-    "data_path": None,
+    "dataset": "ALCE",
+    "data_path": f"{ROOT_PATH}/alce_data/asqa_eval_gtr_top100.json", #None,
     "prompts": prompts_config,
     "retrieval": retrieval_config,
     "query_generation": exp_zephyr_query_gen_fewshots,
-    "results_columns": {
-        "prediction": "generated_text",
-        "reference": "gold_truth",
+    "evaluation":evaluation_config,
+    "column_names": {
+        "prediction": "output",
+        "reference": "answer",
+        "passages":"docs",
+        "query": "question",
     },
 }

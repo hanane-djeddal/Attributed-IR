@@ -39,6 +39,11 @@ def main():
         default="G",
         choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
     )
+    parser.add_argument(
+        "--results_file",
+        type=str,
+        default=None,
+    )
     args = parser.parse_args()
     model_config = CONFIG["langauge_model"][args.model_name]
     experiment = CONFIG["architectures"][args.architcture]
@@ -69,12 +74,16 @@ def main():
                 split="dev",
                 cache_dir=model_config["cache_dir"],
             )
+        elif CONFIG["data_path"].endswith(".json"):
+            print("Loading data : ", CONFIG["data_path"])
+            with open(CONFIG["data_path"]) as f:
+                dataset = json.load(f)
         else:
             print("Loading data : ", CONFIG["data_path"])
             dataset = pd.read_csv(
-                CONFIG["data"]["path"],
+                CONFIG["data_path"],
                 encoding="latin-1",
-                converters={"outline": eval, "candidats": eval},
+                converters={ CONFIG["column_names"]["passages"]: eval,  CONFIG["column_names"]["reference"]: eval},
             )
 
         if experiment["use_retrieved"]:
@@ -84,10 +93,10 @@ def main():
                 converters={"retrieved_ids": eval, "retrieved_passages": eval},
             )
             retrieved_passages = retrieved_passages.rename(
-                columns={"retrieved_passages": "quotes"}
+                columns={"retrieved_passages": CONFIG["column_names"]["passages"]}
             )
             dataset = datasets.Dataset.from_pandas(retrieved_passages)
-            nb_passages = experiment["nb_passages"]
+        nb_passages = experiment["nb_passages"]
 
         results = []
         if use_support_doc:
@@ -98,14 +107,14 @@ def main():
         else:
             prompt = CONFIG["prompts"]["prompot_without_context"]
         start = time.time()
-        for row in tqdm(dataset):
-            context = prepare_contexts(
-                row["quotes"][:nb_passages],
-                retrieved=experiment["use_retrieved"],
-                citation=experiment["citation"],
-            )
-            user_prompt = re.sub("\{query\}", row["query"], prompt["user"])
+        for index, row in enumerate(tqdm(dataset)):
+            user_prompt = re.sub("\{query\}", row[CONFIG["column_names"]["query"]], prompt["user"])
             if use_support_doc:
+                context = prepare_contexts(
+                    row[CONFIG["column_names"]["passages"]][:nb_passages],
+                    hagrid_gold=(CONFIG["dataset"] == "HAGRID" and experiment["hagrid_gold"]),
+                    citation=experiment["citation"],
+                )
                 user_prompt = re.sub("\{context\}", context, user_prompt)
             input_text = [
                 {
@@ -146,14 +155,9 @@ def main():
                     }
                 )
             else:
-                results.append(
-                    {
-                        "query": row["query"],
-                        "generated_text": filtered_answer,
-                        "gold_truth": row["answers"],
-                        "gold_quotes": row["quotes"][:nb_passages],
-                    }
-                )
+                row["output"] = filtered_answer
+                row[CONFIG["column_names"]["passages"]] = row[CONFIG["column_names"]["passages"]][:nb_passages]
+                results.append(row)
         end = time.time()
 
         execution_time = (end - start) / 60
@@ -174,11 +178,12 @@ def main():
         if results is not None:
             exp_config = experiment
             results_df = pd.DataFrame.from_dict(results)
-            results_df.to_csv(f"{experiment_folder}/{experiment['results_file']}")
+            results_file = args.results_file if args.results_file else experiment['results_file']
+            results_df.to_csv(f"{experiment_folder}/{results_file}",index = False)
 
             print(
                 "Result file:",
-                f"{experiment_folder}/{experiment['results_file']}",
+                f"{experiment_folder}/{results_file}",
             )
 
             config_file = f"{experiment_folder}/{experiment['config_file']}"

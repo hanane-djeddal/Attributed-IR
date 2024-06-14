@@ -7,19 +7,11 @@ def load_dataset(split="train"):
     return hagrid
 
 
-def prepare_contexts(context_list, retrieved=False, citation=True):
+def prepare_contexts(context_list, hagrid_gold=False, citation=True):
     """
     concatenate the contexts to use as prompt
     """
-    if retrieved:
-        if citation:
-            context_text = [
-                "[" + str((i + 1)) + "] " + context_list[i]["text"]
-                for i in range(len(context_list))
-            ]
-        else:
-            context_text = context_list
-    else:
+    if hagrid_gold:
         if citation:
             offset = 0
             if context_list[0]["idx"] == 0:
@@ -30,6 +22,22 @@ def prepare_contexts(context_list, retrieved=False, citation=True):
             ]
         else:
             context_text = [ctxt["text"] for ctxt in context_list]
+    else:
+        if citation:
+            context_text = [
+                "[" + str((i + 1)) + "] " + context_list[i]["text"]
+                for i in range(len(context_list))
+            ]
+        else:
+            if isinstance(context_list[0], dict):
+                context_text = [ context_list[i]["text"] for i in range(len(context_list))]
+            else:
+                context_text = context_list
+
+
+
+
+        
     return "\n".join(context_text)
 
 
