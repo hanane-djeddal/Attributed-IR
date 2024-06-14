@@ -210,16 +210,16 @@ architectures_config = {
 CONFIG: Dict = {
     "architectures": architectures_config,
     "langauge_model": llms_config,
-    "dataset": "ALCE",
+    "dataset": "HAGRID",
     "data_path": f"{ROOT_PATH}/alce_data/asqa_eval_gtr_top100.json", #None,
     "prompts": prompts_config,
     "retrieval": retrieval_config,
     "query_generation": exp_zephyr_query_gen_fewshots,
     "evaluation":evaluation_config,
     "column_names": {
-        "prediction": "output",
-        "reference": "answer",
-        "passages":"docs",
-        "query": "question",
+        "prediction": "generated_text",
+        "reference": "gold_truth",
+        "passages":"quotes",
+        "query": "query",
     },
 }

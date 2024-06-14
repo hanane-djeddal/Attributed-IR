@@ -35,11 +35,19 @@ def main():
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
     results_file = args.results_file if args.results_file else (  results_folder + "/" + experiment["results_file"])
+    print("Loading results file:", results_file)
     generated_column = CONFIG["column_names"]["prediction"]
     reference_column = CONFIG["column_names"]["reference"]
-    results = pd.read_csv(
-        results_file, index_col=[0], #converters={reference_column: eval}
-    )
+    if results_file.endswith(".json"):
+        with open(results_file) as f:
+            json_dict = json.load(f)
+            results = pd.json_normalize(json_dict["data"])
+    elif CONFIG["dataset"] == "HAGRID":
+        results = pd.read_csv(
+            results_file, index_col=[0], converters={reference_column: eval}
+        )
+    else:
+        results = pd.read_csv(results_file, index_col=[0])
 
     ## processing the generated text to remove system prompt
 
