@@ -50,12 +50,16 @@ def main():
                 "miracl/hagrid",
                 split="dev",
             )
+        elif CONFIG["data_path"].endswith(".json"):
+            print("Loading data : ", CONFIG["data_path"])
+            with open(CONFIG["data_path"]) as f:
+                dataset = json.load(f)
         else:
             print("Loading data : ", CONFIG["data_path"])
             dataset = pd.read_csv(
                 CONFIG["data_path"],
                 encoding="latin-1",
-                converters={"outline": eval, "candidats": eval},
+                converters={ CONFIG["column_names"]["passages"]: eval,  CONFIG["column_names"]["reference"]: eval},
             )
 
         results = []
@@ -73,7 +77,7 @@ def main():
             ]
             nb_shots = CONFIG["query_generation"]["nb_shots"]
             queries = generate_queries(
-                row["query"],
+                row[CONFIG["column_names"]["query"]],
                 model,
                 tokenizer,
                 prompt,
@@ -85,8 +89,8 @@ def main():
             )
             results.append(
                 {
-                    "query": row["query"],
-                    "query_id": row["query_id"],
+                    "query": row[CONFIG["column_names"]["query"]],
+                    #"query_id": row["query_id"],
                     "generated_text": queries,
                 }
             )
