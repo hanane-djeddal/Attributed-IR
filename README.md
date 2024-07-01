@@ -21,7 +21,7 @@ pip install -r requirements.txt
 You can also create a conda environment by running the command below.
 
 ```
-conda env create -f attributed-ir.yml
+conda env create -fenvironment.yml
 ```
 ## Architectures
 
