@@ -3,14 +3,33 @@ import sys
 import re
 from typing import List
 from transformers import set_seed
+from torch import cuda, bfloat16
+import torch
+from transformers import StoppingCriteria, StoppingCriteriaList
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../..")
 sys.path.append(ROOT_PATH)
 
 from config import CONFIG
 
-set_seed(CONFIG["zephyr"]["SEED"])
+device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
 
+class StopOnTokens(StoppingCriteria):
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    def __call__(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
+    ) -> bool:
+        stop_list = ["\nHuman:", "\n```\n"]
+
+        stop_token_ids = [self.tokenizer(x)["input_ids"] for x in stop_list]
+        stop_token_ids = [torch.LongTensor(x).to(device) for x in stop_token_ids]
+        for stop_ids in stop_token_ids:
+            if input_ids.shape[1] >= stop_ids.shape[0]:
+                if torch.eq(input_ids[0][-len(stop_ids) :], stop_ids).all():
+                    return True
+        return False
 
 def parse_generated_queries(answer: str):
     answer = re.sub(r"\d+\.", "", answer)
@@ -29,6 +48,7 @@ def generate_queries(
     fewshot_examples: List = None,
     nb_queries_to_generate: int = 4,
     nb_shots: int = None,
+    model_name ="zephyr",
 ) -> List[str]:
     if include_answer and answer:
         user_prompt = re.sub("\{query\}", query, prompt["user_with_answer"])
@@ -67,27 +87,38 @@ def generate_queries(
             formatted_examples.append(formatted_example)
         complete_user_prompt = "\n\n".join(formatted_examples) + "\n\n" + user_prompt
         user_prompt = complete_user_prompt
-        # complete_user_prompt = "\n\n\n".join(fewshot_examples) + "\n\n\n" + user_prompt
-        # user_prompt = complete_user_prompt
 
-    print("Example prompt:", user_prompt)
-    print("Example System prompt:", system_prompt)
+    # print("Example prompt:", user_prompt)
+    # print("Example System prompt:", system_prompt)
     input_text.append({"role": "user", "content": user_prompt})
 
     inputs = tokenizer.apply_chat_template(
-        input_text, add_generation_prompt=True, return_tensors="pt"
+        input_text, add_generation_prompt=False, return_tensors="pt"
     )
-
-    tokens = model.generate(
-        inputs.to(model.device),
-        max_new_tokens=1024,
-        temperature=0.7,
-        # do_sample=False,
-        pad_token_id=tokenizer.eos_token_id,
-    )
+    if model_name == "zephyr":
+        tokens = model.generate(
+            inputs.to(model.device),
+            max_new_tokens=CONFIG["langauge_model"]["llama"]["max_new_tokens"],
+            temperature=CONFIG["langauge_model"]["llama"]["temperature"],
+            # do_sample=False,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    else:
+        stopping_criteria = StoppingCriteriaList([StopOnTokens(tokenizer)])
+        tokens = model.generate(
+            inputs.to(model.device),
+            stopping_criteria=stopping_criteria, 
+            max_new_tokens= CONFIG["langauge_model"]["llama"]["max_new_tokens"],  
+            repetition_penalty= CONFIG["langauge_model"]["llama"]["repetition_penalty"],  
+            pad_token_id=tokenizer.eos_token_id,
+            temperature=CONFIG["langauge_model"]["llama"]["temperature"],
+        )
 
     answer = tokenizer.decode(tokens[0], skip_special_tokens=True)
-    keyword = "<|assistant|>"
+    if model_name == "zephyr":
+        keyword = "<|assistant|>"
+    else:
+        keyword = "[/INST]"
     filetred_answer = answer
     if keyword in answer:
         start_index = answer.index(keyword)

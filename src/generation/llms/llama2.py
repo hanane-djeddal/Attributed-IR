@@ -38,7 +38,7 @@ class StopOnTokens(StoppingCriteria):
 
 
 def load_model():
-    model_id = CONFIG["llama"]["model_id"]
+    model_id = CONFIG["langauge_model"]["llama"]["model_id"]
     print("Loading model: ", model_id)
     running_device_setting = CONFIG["device"]
     if running_device_setting != "CPU":
@@ -55,43 +55,24 @@ def load_model():
 
     # begin initializing HF items, you need an access token
     model_config = transformers.AutoConfig.from_pretrained(model_id)
-    model_config.do_sample = CONFIG["llama"]["do_sample"]
+    model_config.do_sample =  CONFIG["langauge_model"]["llama"]["do_sample"]
 
     print("Loading Tokenizer")
     tokenizer = transformers.AutoTokenizer.from_pretrained(
-        model_id, cache_dir=CONFIG["llama"]["cache_dir"]
+        model_id, cache_dir= CONFIG["langauge_model"]["llama"]["cache_dir"]
     )
     quantization_config = BitsAndBytesConfig(llm_int8_enable_fp32_cpu_offload=True)
-    # device_map = {
-    #     "transformer.word_embeddings": 0,
-    #     "transformer.word_embeddings_layernorm": 0,
-    #     "lm_head": 0,
-    #     "transformer.h": 0,
-    #     "transformer.ln_f": 1,
-    #     "transformer.embed_tokens.weight": 1,
-    #     "model.embed_tokens": 1,
-    #     "model.layers": 1,
-    #     "model.norm": 1,
-    # }
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_id,
         trust_remote_code=True,
         config=model_config,
         quantization_config=bnb_config,  # quantization_config,  # bnb_config,  ## comment this param when running on CPU
         device_map="auto",  # device_map,  # "auto",
-        cache_dir=CONFIG["llama"]["cache_dir"],
+        cache_dir= CONFIG["langauge_model"]["llama"]["cache_dir"],
     )
-    # model = transformers.AutoModelForCausalLM.from_pretrained(PATH_TO_MODEL)
-
-    # enable evaluation mode to allow model inference
     model.eval()
 
     print(f"Model loaded on {device}")
-
-    # print("saving models")
-    # tokenizer.save_pretrained("./models_cache/llama-2-chat-7b/")
-    # model.save_pretrained("./models_cache/llama-2-chat-7b/")
-    # model_config.save_pretrained("./models_cache/llama-2-chat-7b/")
 
     stopping_criteria = StoppingCriteriaList([StopOnTokens(tokenizer)])
 
@@ -102,10 +83,10 @@ def load_model():
         task="text-generation",  # we pass model parameters here too
         stopping_criteria=stopping_criteria,  # without this model rambles during chat
         # temperature=0.1,  # 'randomness' of outputs, 0.0 is the min and 1.0 the max
-        max_new_tokens=CONFIG["llama"][
+        max_new_tokens= CONFIG["langauge_model"]["llama"][
             "max_new_tokens"
         ],  # max number of tokens to generate in the output
-        repetition_penalty=CONFIG["llama"][
+        repetition_penalty= CONFIG["langauge_model"]["llama"][
             "repetition_penalty"
         ],  # without this output begins repeating
     )
@@ -173,10 +154,11 @@ def generate_queries(
 
     tokens = model.generate(
         inputs.to(model.device),
-        max_new_tokens=1024,
-        temperature=0.7,
-        # do_sample=False,
+        stopping_criteria=stopping_criteria,  # without this model rambles during chat
+        max_new_tokens= CONFIG["langauge_model"]["llama"]["max_new_tokens"],  # max number of tokens to generate in the output
+        repetition_penalty= CONFIG["langauge_model"]["llama"]["repetition_penalty"],  # without this output begins repeating
         pad_token_id=tokenizer.eos_token_id,
+        temperature=0.7,
     )
 
     answer = tokenizer.decode(tokens[0], skip_special_tokens=True)

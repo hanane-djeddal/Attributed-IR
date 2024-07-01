@@ -7,9 +7,12 @@ import time
 import torch
 import pandas as pd
 from tqdm import tqdm
+from torch import cuda, bfloat16
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import datasets
 from transformers import set_seed
+from transformers import BitsAndBytesConfig
+import transformers
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
@@ -33,12 +36,24 @@ def main():
     execution_time = 0
     try:
         model_id = model_config["model_id"]
+        if args.model_name == "llama":
+            bnb_config = transformers.BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=bfloat16,
+            )
+
+            quantization_config=bnb_config
+        else:
+            quantization_config = None
         tokenizer = AutoTokenizer.from_pretrained(
             model_id,
             cache_dir=model_config["cache_dir"],
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
+            quantization_config=bnb_config,
             cache_dir=model_config["cache_dir"],
             trust_remote_code=True,
             device_map="auto",
@@ -49,6 +64,7 @@ def main():
             dataset = datasets.load_dataset(
                 "miracl/hagrid",
                 split="dev",
+                trust_remote_code=True
             )
         elif CONFIG["data_path"].endswith(".json"):
             print("Loading data : ", CONFIG["data_path"])
@@ -65,10 +81,10 @@ def main():
         results = []
         prompt = CONFIG["prompts"]["query_gen_prompt"]
         start = time.time()
-        for row in tqdm(dataset):
+        for index, row in enumerate(tqdm(dataset)):
             answer = None
             if CONFIG["query_generation"]["include_answer"]:
-                answer = row["answers"][0]["answer"]
+                answer = row[CONFIG["column_names"]["reference"]][0]["answer"]
             examples = None
             if CONFIG["query_generation"]["setting"] == "fewshot":
                 examples = CONFIG["query_generation"]["fewshot_examples"]
@@ -86,11 +102,11 @@ def main():
                 fewshot_examples=examples,
                 nb_queries_to_generate=nb_queries_to_generate,
                 nb_shots=nb_shots,
+                model_name = args.model_name
             )
             results.append(
                 {
                     "query": row[CONFIG["column_names"]["query"]],
-                    #"query_id": row["query_id"],
                     "generated_text": queries,
                 }
             )
@@ -112,7 +128,7 @@ def main():
             os.makedirs(experiment_folder)
             print("New directory for experiment is created: ", experiment_folder)
         if results is not None:
-            exp_config = CONFIG["experiment"]
+            exp_config = CONFIG['query_generation']
             results_df = pd.DataFrame.from_dict(results)
             results_df.to_csv(
                 f"{experiment_folder}/{CONFIG['query_generation']['results_file']}"

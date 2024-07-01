@@ -8,10 +8,11 @@ llama_config = {
     "model_name": "Llama-2-7b-chat-hf",
     "model_id": "meta-llama/Llama-2-7b-chat-hf",
     "cache_dir": f"{ROOT_PATH}/models_cache/",
-    "max_new_tokens": 4096,
+    "max_new_tokens": 1024,
     "repetition_penalty": 1.1,
+    "temperature":0.7,
     "do_sample": False,
-    "max_input_length": 2048,
+    "max_input_length": 1024,
     "SEED": 42,
 }
 
@@ -69,12 +70,11 @@ prompts_config = {
     },
 }
 
-
 exp_zephyr_query_gen_fewshots = {
-    "experiment_name": "zephyr_zs_query_generation",
+    "experiment_name": "llamas_zs_query_generation",
     "experiment_path": f"{ROOT_PATH}/results/",
-    "results_file": "results/generated_queries_4shot_4q.csv",
-    "config_file": "generated_queries_4shot_4q.json",
+    "results_file": "generated_queries_4shot_4q_Hagrid_llama.csv",#"generated_queries_4shot_4q.csv",
+    "config_file": "generated_queries_4shot_4q_Hagrid_config_llama.json",#"generated_queries_4shot_4q_config.json",
     "setting": "fewshot",  # zeroshot
     "query_gen_prompt": {
         "system": "You are an assistant that helps the user with their search. I will give you a question, based on the possible answer of the question you will provide queries that will help find documents that support it. Only generate your suggested queries without explanation. The maximum number of queries is {nb_queries}",  # .
@@ -154,6 +154,50 @@ exp_zephyr_query_gen_fewshots = {
     ],
 }
 
+exp_query_gen_fewshots_from_alce = {
+    "experiment_name": "zephyr_zs_query_generation",
+    "experiment_path": f"{ROOT_PATH}/results/",
+    "results_file": "generated_queries_4shot_4q_asqa_llama_asqashots.csv",#"generated_queries_4shot_4q.csv",
+    "config_file": "generated_queries_4shot_4q_asqa_config_llama_asqashots.json",#"generated_queries_4shot_4q_config.json",
+    "setting": "fewshot",  # zeroshot
+    "query_gen_prompt": {
+        "system": "You are an assistant that helps the user with their search. I will give you a question, based on the possible answer of the question you will provide queries that will help find documents that support it. Only generate your suggested queries without explanation. The maximum number of queries is {nb_queries}",  # .
+        "user_with_answer": "QUESTION: {query} \n\n ANSWER:\n {answer} \n\n SUGGESTED QUERIES:",
+        "user": "QUESTION: {query} \n\n SUGGESTED QUERIES:",
+    },
+    "include_answer": False,
+    "nb_queries_to_generate": 4,
+    "nb_shots": 4,
+    "fewshot_examples": [
+        {
+            "user_query": "Who published harry potter and the prisoner of azkaban?",
+            "generated_queries": [
+                "Who published harry potter and the prisoner of azkaban in the UK?",
+                "Who published harry potter and the prisoner of azkaban in the US?"
+                "Who published harry potter and the prisoner of azkaban in Canada?"
+            ],
+        },
+        {
+            "user_query": "Where does the vikings play their home games?",
+            "generated_queries": [
+                "What stadium does the vikings play their home games since 2016?",
+                "Where is the stadium that the vikings play their home games since 2013?",
+                "What stadium does the vikings play their home games from 1982-2013?",
+                "What stadium does the vikings play their home games in 2014 and 2015?",
+                "What stadium does the vikings play their home games in from 1961-1981?",
+            ],
+        },
+        {
+            "user_query": "When was the last time a us submarine sunk?",
+            "generated_queries": [
+                "When was the last time a us nuclear submarine sunk?",
+                "When was the last time a decommissioned us submarine sunk?",
+                "When was the last time a us submarine sunk prior to commissioning?",
+                "When was the last time a us non-nuclear submarine sunk?",
+            ],
+        },
+        ]
+}
 
 llms_config = {"zephyr": zephyr_config, "llama": llama_config}
 architectures_config = {
@@ -210,7 +254,7 @@ architectures_config = {
 CONFIG: Dict = {
     "architectures": architectures_config,
     "langauge_model": llms_config,
-    "dataset": "HAGRID",
+    "dataset": "HAGRID", #HAGRID or other : ALCE,..
     "data_path": f"{ROOT_PATH}/alce_data/asqa_eval_gtr_top100.json", #None,
     "prompts": prompts_config,
     "retrieval": retrieval_config,
@@ -218,8 +262,8 @@ CONFIG: Dict = {
     "evaluation":evaluation_config,
     "column_names": {
         "prediction": "generated_text",
-        "reference": "gold_truth",
-        "passages":"quotes",
-        "query": "query",
+        "reference": "answers", #annotations
+        "passages":"quotes", #quotes docs
+        "query": "query", #query question
     },
 }
