@@ -95,30 +95,16 @@ def generate_queries(
     inputs = tokenizer.apply_chat_template(
         input_text, add_generation_prompt=False, return_tensors="pt"
     )
-    if model_name == "zephyr":
-        tokens = model.generate(
-            inputs.to(model.device),
-            max_new_tokens=CONFIG["langauge_model"]["llama"]["max_new_tokens"],
-            temperature=CONFIG["langauge_model"]["llama"]["temperature"],
-            # do_sample=False,
-            pad_token_id=tokenizer.eos_token_id,
-        )
-    else:
-        stopping_criteria = StoppingCriteriaList([StopOnTokens(tokenizer)])
-        tokens = model.generate(
-            inputs.to(model.device),
-            stopping_criteria=stopping_criteria, 
-            max_new_tokens= CONFIG["langauge_model"]["llama"]["max_new_tokens"],  
-            repetition_penalty= CONFIG["langauge_model"]["llama"]["repetition_penalty"],  
-            pad_token_id=tokenizer.eos_token_id,
-            temperature=CONFIG["langauge_model"]["llama"]["temperature"],
-        )
-
+    tokens = model.generate(
+        inputs.to(model.device),
+        max_new_tokens=CONFIG["langauge_model"]["llama"]["max_new_tokens"],
+        temperature=CONFIG["langauge_model"]["llama"]["temperature"],
+        # do_sample=False,
+        pad_token_id=tokenizer.eos_token_id,
+    )
     answer = tokenizer.decode(tokens[0], skip_special_tokens=True)
     if model_name == "zephyr":
         keyword = "<|assistant|>"
-    else:
-        keyword = "[/INST]"
     filetred_answer = answer
     if keyword in answer:
         start_index = answer.index(keyword)

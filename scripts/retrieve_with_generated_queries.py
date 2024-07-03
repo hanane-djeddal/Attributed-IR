@@ -26,7 +26,7 @@ def main():
     start = time.time()
 
     dataset = datasets.load_dataset("miracl/hagrid", split="dev")
-    queries_dataset = pd.DataFrame(queries_dataset)
+    queries_dataset = pd.DataFrame(dataset)
 
     queries_file = CONFIG["retrieval"]["generated_queries_file"]
     print("Loading generated queries from :", queries_file)

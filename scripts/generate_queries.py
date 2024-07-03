@@ -7,10 +7,10 @@ import time
 import torch
 import pandas as pd
 from tqdm import tqdm
-from torch import cuda, bfloat16
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import datasets
 from transformers import set_seed
+from torch import cuda, bfloat16
 from transformers import BitsAndBytesConfig
 import transformers
 
@@ -20,6 +20,7 @@ sys.path.append(ROOT_PATH)
 from config import CONFIG
 
 from src.generation.llms.zephyr import generate_queries
+from src.generation.llms.llama2 import generate_queries_llama
 
 
 def main():
@@ -92,18 +93,30 @@ def main():
                 "nb_queries_to_generate"
             ]
             nb_shots = CONFIG["query_generation"]["nb_shots"]
-            queries = generate_queries(
-                row[CONFIG["column_names"]["query"]],
-                model,
-                tokenizer,
-                prompt,
-                include_answer=CONFIG["query_generation"]["include_answer"],
-                answer=answer,
-                fewshot_examples=examples,
-                nb_queries_to_generate=nb_queries_to_generate,
-                nb_shots=nb_shots,
-                model_name = args.model_name
-            )
+            if args.model_name == "llama":
+                    queries = generate_queries_llama(
+                    row[CONFIG["column_names"]["query"]],
+                    model,
+                    tokenizer,
+                    prompt,
+                    include_answer=CONFIG["query_generation"]["include_answer"],
+                    answer=answer,
+                    fewshot_examples=examples,
+                    nb_queries_to_generate=nb_queries_to_generate,
+                    nb_shots=nb_shots,
+                )
+            else:
+                queries = generate_queries(
+                    row[CONFIG["column_names"]["query"]],
+                    model,
+                    tokenizer,
+                    prompt,
+                    include_answer=CONFIG["query_generation"]["include_answer"],
+                    answer=answer,
+                    fewshot_examples=examples,
+                    nb_queries_to_generate=nb_queries_to_generate,
+                    nb_shots=nb_shots,
+                )
             results.append(
                 {
                     "query": row[CONFIG["column_names"]["query"]],

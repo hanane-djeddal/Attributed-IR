@@ -39,8 +39,8 @@ retrieval_config = {
     "experiment_name": "retrieval",
     "experiment_path": f"{ROOT_PATH}/results/",
     "results_file": "retrieval_user_query.csv",
-    "query_gen_results_file": "generated_queries_4shot_4q_rerank.csv",
-    "generated_queries_file": f"{ROOT_PATH}/results/generated_queries_4shot_4q_rerank.csv",
+    "query_gen_results_file": "generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv",
+    "generated_queries_file": f"{ROOT_PATH}/results/llamas_zs_query_generation/generated_queries_4shot_4q_Hagrid_llama.csv",
     "posthoc_retrieval_file": f"{ROOT_PATH}/results/G/generation_generate_vanilla_zs.csv",
     "query_aggregation": "rerank",  # can be : "rerank",  "seperate_queries", vote, sort, simple, summed_vote, mean_vote, combSum
     "filter_queries": False,
@@ -73,8 +73,8 @@ prompts_config = {
 exp_zephyr_query_gen_fewshots = {
     "experiment_name": "llamas_zs_query_generation",
     "experiment_path": f"{ROOT_PATH}/results/",
-    "results_file": "generated_queries_4shot_4q_Hagrid_llama.csv",#"generated_queries_4shot_4q.csv",
-    "config_file": "generated_queries_4shot_4q_Hagrid_config_llama.json",#"generated_queries_4shot_4q_config.json",
+    "results_file": "generated_queries_4shot_4q_asqa_llama.csv",#"generated_queries_4shot_4q.csv",
+    "config_file": "generated_queries_4shot_4q_asqa_config_llama.json",#"generated_queries_4shot_4q_config.json",
     "setting": "fewshot",  # zeroshot
     "query_gen_prompt": {
         "system": "You are an assistant that helps the user with their search. I will give you a question, based on the possible answer of the question you will provide queries that will help find documents that support it. Only generate your suggested queries without explanation. The maximum number of queries is {nb_queries}",  # .
@@ -154,51 +154,6 @@ exp_zephyr_query_gen_fewshots = {
     ],
 }
 
-exp_query_gen_fewshots_from_alce = {
-    "experiment_name": "zephyr_zs_query_generation",
-    "experiment_path": f"{ROOT_PATH}/results/",
-    "results_file": "generated_queries_4shot_4q_asqa_llama_asqashots.csv",#"generated_queries_4shot_4q.csv",
-    "config_file": "generated_queries_4shot_4q_asqa_config_llama_asqashots.json",#"generated_queries_4shot_4q_config.json",
-    "setting": "fewshot",  # zeroshot
-    "query_gen_prompt": {
-        "system": "You are an assistant that helps the user with their search. I will give you a question, based on the possible answer of the question you will provide queries that will help find documents that support it. Only generate your suggested queries without explanation. The maximum number of queries is {nb_queries}",  # .
-        "user_with_answer": "QUESTION: {query} \n\n ANSWER:\n {answer} \n\n SUGGESTED QUERIES:",
-        "user": "QUESTION: {query} \n\n SUGGESTED QUERIES:",
-    },
-    "include_answer": False,
-    "nb_queries_to_generate": 4,
-    "nb_shots": 4,
-    "fewshot_examples": [
-        {
-            "user_query": "Who published harry potter and the prisoner of azkaban?",
-            "generated_queries": [
-                "Who published harry potter and the prisoner of azkaban in the UK?",
-                "Who published harry potter and the prisoner of azkaban in the US?"
-                "Who published harry potter and the prisoner of azkaban in Canada?"
-            ],
-        },
-        {
-            "user_query": "Where does the vikings play their home games?",
-            "generated_queries": [
-                "What stadium does the vikings play their home games since 2016?",
-                "Where is the stadium that the vikings play their home games since 2013?",
-                "What stadium does the vikings play their home games from 1982-2013?",
-                "What stadium does the vikings play their home games in 2014 and 2015?",
-                "What stadium does the vikings play their home games in from 1961-1981?",
-            ],
-        },
-        {
-            "user_query": "When was the last time a us submarine sunk?",
-            "generated_queries": [
-                "When was the last time a us nuclear submarine sunk?",
-                "When was the last time a decommissioned us submarine sunk?",
-                "When was the last time a us submarine sunk prior to commissioning?",
-                "When was the last time a us non-nuclear submarine sunk?",
-            ],
-        },
-        ]
-}
-
 llms_config = {"zephyr": zephyr_config, "llama": llama_config}
 architectures_config = {
     "G": {
@@ -240,14 +195,14 @@ architectures_config = {
     "RTG-query-gen": {
         "use_retrieved": True,
         "hagrid_gold":False,
-        "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",  # generated_queries_4shot_4q_lbre_nb_example_pmpt2_desc_seperate
+        "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv", #generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv", 
         "use_context": True,
-        "nb_passages": 5,
+        "nb_passages": 2,
         "citation": True,
         "experiment_name": "RTG_generated_queries",
         "experiment_path": f"{ROOT_PATH}/results/",
-        "results_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_5_passages.csv",
-        "config_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_5_passages.json",
+        "results_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages_llama.csv",
+        "config_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages_llama.json",
     },
 }
 
@@ -262,8 +217,8 @@ CONFIG: Dict = {
     "evaluation":evaluation_config,
     "column_names": {
         "prediction": "generated_text",
-        "reference": "answers", #annotations
-        "passages":"quotes", #quotes docs
-        "query": "query", #query question
+        "reference": "answers", #annotations, answers
+        "passages":"quotes", #quotes, docs
+        "query": "query", #query , question
     },
 }

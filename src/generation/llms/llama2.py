@@ -93,7 +93,25 @@ def load_model():
     return generate_text
 
 
-def generate_queries(
+def generate_answer(
+    model,
+    tokenizer,
+    inputs,
+) ->str:
+    stopping_criteria = StoppingCriteriaList([StopOnTokens(tokenizer)])
+    tokens = model.generate(
+        inputs.to(model.device),
+        stopping_criteria=stopping_criteria, 
+        max_new_tokens= CONFIG["langauge_model"]["llama"]["max_new_tokens"],  
+        repetition_penalty= CONFIG["langauge_model"]["llama"]["repetition_penalty"],  
+        pad_token_id=tokenizer.eos_token_id,
+        temperature=CONFIG["langauge_model"]["llama"]["temperature"],
+    )
+    return tokens
+
+
+
+def generate_queries_llama(
     query: str,
     model,
     tokenizer,
@@ -124,9 +142,8 @@ def generate_queries(
         selected_examples = fewshot_examples[:nb_shots]
         # selected_examples.reverse()
         for example in selected_examples:
-            formatted_example = (
-                "QUESTION: " + example["user_query"] + " \n\nSUGGESTED QUERIES: \n"
-            )
+            input_text.append({"role": "user", "content":  "QUESTION: " + example["user_query"]})
+            formatted_example = " SUGGESTED QUERIES: \n"
 
             if len(example["generated_queries"]) >= nb_queries_to_generate:
                 selected_queries = example["generated_queries"][:nb_queries_to_generate]
@@ -137,37 +154,37 @@ def generate_queries(
                 formatted_example = (
                     formatted_example + str(i + 1) + ". " + selected_queries[i] + " \n"
                 )
+            
+            input_text.append({"role": "assistant", "content": formatted_example})
 
-            formatted_examples.append(formatted_example)
-        complete_user_prompt = "\n\n".join(formatted_examples) + "\n\n" + user_prompt
-        user_prompt = complete_user_prompt
-        # complete_user_prompt = "\n\n\n".join(fewshot_examples) + "\n\n\n" + user_prompt
-        # user_prompt = complete_user_prompt
-
-    print("Example prompt:", user_prompt)
-    print("Example System prompt:", system_prompt)
+    # print("Example prompt:", user_prompt)
+    # print("Example System prompt:", system_prompt)
     input_text.append({"role": "user", "content": user_prompt})
 
     inputs = tokenizer.apply_chat_template(
-        input_text, add_generation_prompt=True, return_tensors="pt"
+        input_text, add_generation_prompt=False, return_tensors="pt"
     )
-
+    stopping_criteria = StoppingCriteriaList([StopOnTokens(tokenizer)])
     tokens = model.generate(
         inputs.to(model.device),
-        stopping_criteria=stopping_criteria,  # without this model rambles during chat
-        max_new_tokens= CONFIG["langauge_model"]["llama"]["max_new_tokens"],  # max number of tokens to generate in the output
-        repetition_penalty= CONFIG["langauge_model"]["llama"]["repetition_penalty"],  # without this output begins repeating
+        stopping_criteria=stopping_criteria, 
+        max_new_tokens= CONFIG["langauge_model"]["llama"]["max_new_tokens"],  
+        repetition_penalty= CONFIG["langauge_model"]["llama"]["repetition_penalty"],  
         pad_token_id=tokenizer.eos_token_id,
-        temperature=0.7,
+        temperature=CONFIG["langauge_model"]["llama"]["temperature"],
     )
 
     answer = tokenizer.decode(tokens[0], skip_special_tokens=True)
-    keyword = "<|assistant|>"
-    filetred_answer = answer
-    print(answer)
-    if keyword in answer:
-        start_index = answer.index(keyword)
-        filetred_answer = answer[start_index + len(keyword) :]
+    #print("RAW ANSWER:",answer)
+    keyword = "[/INST]"
+    index_kw = answer.rfind(keyword)
+    if index_kw != -1:
+        filetred_answer = answer[index_kw+len(keyword)+1:]
+    index_first_query = filetred_answer.find("\n")
+    if index_first_query != -1:
+        filetred_answer = filetred_answer[index_first_query+1:]
+    
+    #print("filtered ANSWER:",filetred_answer)
     queries = parse_generated_queries(filetred_answer)
     return queries
 

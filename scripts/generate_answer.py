@@ -10,13 +10,16 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import datasets
 from transformers import set_seed
-
+from torch import cuda, bfloat16
+from transformers import BitsAndBytesConfig
+import transformers
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
 
 from config import CONFIG
 from src.data.hagrid_dataset_tools import prepare_contexts
+from src.generation.llms.llama2 import generate_answer
 
 
 def format_support_passages(passages_text, passages_ids):
@@ -55,7 +58,18 @@ def main():
     nb_passages = None
     use_support_doc = experiment["use_context"]
 
-    try:
+    try: 
+        if args.model_name == "llama":
+            bnb_config = transformers.BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=bfloat16,
+            )
+
+            quantization_config=bnb_config
+        else:
+            quantization_config = None
         model_id = model_config["model_id"]
         tokenizer = AutoTokenizer.from_pretrained(
             model_id,
@@ -65,6 +79,8 @@ def main():
             model_id,
             trust_remote_code=True,
             device_map="auto",
+            quantization_config=bnb_config,
+            cache_dir=model_config["cache_dir"],
         )
 
         ## loading data
@@ -107,7 +123,7 @@ def main():
         else:
             prompt = CONFIG["prompts"]["prompot_without_context"]
         start = time.time()
-        for index, row in enumerate(tqdm(dataset)):
+        for idx, row in enumerate(tqdm(dataset)):
             user_prompt = re.sub("\{query\}", row[CONFIG["column_names"]["query"]], prompt["user"])
             if use_support_doc:
                 context = prepare_contexts(
@@ -130,18 +146,24 @@ def main():
                 return_tensors="pt",
             )
 
-            tokens = model.generate(
-                inputs.to(model.device),
-                max_new_tokens=model_config["max_new_tokens"],
-                temperature=model_config["temperature"],
-                pad_token_id=tokenizer.eos_token_id,
-            )
+            if args.model_name == "llama":
+                tokens = generate_answer(model,tokenizer,inputs)
+            else:
+                tokens = model.generate(
+                    inputs.to(model.device),
+                    max_new_tokens=model_config["max_new_tokens"],
+                    temperature=model_config["temperature"],
+                    pad_token_id=tokenizer.eos_token_id,
+                )
 
             answer = tokenizer.decode(tokens[0], skip_special_tokens=True)
-
-            pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
+            if args.model_name == "llama":
+                pattern =r'\[INST\][\s\S].*?\[/INST\]'
+                print("patter",pattern)
+            else:
+                pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
             filtered_answer = answer.replace("<|endoftext|>", "")
-            filtered_answer = re.sub(pattern, "", filtered_answer)
+            filtered_answer = re.sub(pattern, "", filtered_answer,flags=re.DOTALL)
 
             if experiment["use_retrieved"]:
                 passages = format_support_passages(row["quotes"], row["retrieved_ids"])
