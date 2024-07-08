@@ -75,7 +75,7 @@ def get_attributable_answer(answers, text_only=True):
 
 
 def get_all_answers(
-    answers, text_only=True, with_citiations=False
+    answers, text_only=True, with_citiations=False, answer_kw = "answer"
 ):  # fonction de raouf
     """
     fonction return all the reference answers (type list) for each answers
@@ -89,13 +89,13 @@ def get_all_answers(
 
     if text_only:
         if not with_citiations:
-            return [re.sub(expression, "", s["answer"]) for s in answers]
+            return [re.sub(expression, "", s[answer_kw]) for s in answers]
         else:
-            return [s["answer"] for s in answers]
+            return [s[answer_kw] for s in answers]
     else:
         if not with_citiations:
             for s in answers:
-                s["answer"] = re.sub(expression, "", s["answer"])
+                s[answer_kw] = re.sub(expression, "", s[answer_kw])
 
         return answers
 

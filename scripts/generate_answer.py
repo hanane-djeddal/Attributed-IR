@@ -159,7 +159,6 @@ def main():
             answer = tokenizer.decode(tokens[0], skip_special_tokens=True)
             if args.model_name == "llama":
                 pattern =r'\[INST\][\s\S].*?\[/INST\]'
-                print("patter",pattern)
             else:
                 pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
             filtered_answer = answer.replace("<|endoftext|>", "")

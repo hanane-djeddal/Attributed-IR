@@ -29,12 +29,20 @@ def main():
         type=str,
         default=None,
     )
+    parser.add_argument(
+        "--multiple_gold_answers",
+        type=bool,
+        default=False,
+    )
     args = parser.parse_args()
     experiment = CONFIG["architectures"][args.architcture]
 
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
     results_file = args.results_file if args.results_file else (  results_folder + "/" + experiment["results_file"])
+    multiple_answers = args.multiple_gold_answers if args.multiple_gold_answers else CONFIG["multiple_gold_answers"]
+
+
     print("Loading results file:", results_file)
     generated_column = CONFIG["column_names"]["prediction"]
     reference_column = CONFIG["column_names"]["reference"]
@@ -42,12 +50,12 @@ def main():
         with open(results_file) as f:
             json_dict = json.load(f)
             results = pd.json_normalize(json_dict["data"])
-    elif CONFIG["dataset"] == "HAGRID":
+    elif multiple_answers:
         results = pd.read_csv(
             results_file, index_col=[0], converters={reference_column: eval}
         )
     else:
-        results = pd.read_csv(results_file, index_col=[0])
+        results = pd.read_csv(results_file,index_col=[0])
 
     ## processing the generated text to remove system prompt
 
@@ -63,6 +71,8 @@ def main():
     if CONFIG["dataset"] == "HAGRID":
         results["gold_answer"] = results[reference_column].apply(get_attributable_answer)
         results = results[results["gold_answer"].str.len() > 0]
+    elif multiple_answers:
+        results["gold_answer"] = results[reference_column].apply(lambda x : x[0][CONFIG["column_names"]["multiple_answers"]])
     else:
         results["gold_answer"] = results[reference_column]
 
@@ -72,9 +82,9 @@ def main():
     results["gold_answer"] = results["gold_answer"].str.replace(
         citation_pattern, "", regex=True
     )
-    if CONFIG["dataset"] == "HAGRID":
+    if multiple_answers:
         # add all answer without citiations
-        results["all_gold_answer"] = results[reference_column].apply(get_all_answers)
+        results["all_gold_answer"] = results[reference_column].apply(lambda x : get_all_answers(x,answer_kw=CONFIG["column_names"]["multiple_answers"]))
         print(
             "example all gold answer without citations: ",
             results["all_gold_answer"][0],
@@ -119,7 +129,7 @@ def main():
     bleu_score = bleu(results[generated_column], results[reference_column], CONFIG)
     rouge_scores_ov_all = None
     bert_scores_all = None
-    if CONFIG["dataset"] == "HAGRID":
+    if multiple_answers:
         # with all reference answer
 
         reference_column = "all_gold_answer"
@@ -169,11 +179,12 @@ def main():
     print(tabulate(performance_df, headers="keys", tablefmt="presto"))
     performance_df.to_csv(os.path.join(results_folder, "performance_bert.csv"))
     bleu_score_all = None
-    if CONFIG["dataset"] == "HAGRID":
+    if multiple_answers:
         print("load bleu score all")
         bleu_score_all = bleu_all(
             results[generated_column], results[reference_column], CONFIG
         )
+        print("bleu_score_all",bleu_score_all)
 
     performance_bleu = {
         "Bleu ": {

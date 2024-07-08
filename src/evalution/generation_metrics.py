@@ -15,7 +15,7 @@ def rouge_detailed_ov(generated, reference, CONFIG , **kwargs):
     Huggingface old version of rouge that details precision/recall/fscore
     """
     metric = datasets.load_metric(
-        "rouge", cache_dir=CONFIG["evaluation"]["cache_dir"] + "rouge_old_version/"
+        "rouge", cache_dir=CONFIG["evaluation"]["cache_dir"] + "rouge_old_version/",trust_remote_code=True
     )
     metric.add_batch(predictions=generated, references=reference)
     results = metric.compute()
@@ -29,7 +29,7 @@ def rouge_detailed_ov_all(generated, reference, CONFIG , **kwargs):
     """
 
     metric = datasets.load_metric(
-        "rouge", cache_dir=CONFIG["evaluation"]["cache_dir"] + "rouge_old_version/",
+        "rouge", cache_dir=CONFIG["evaluation"]["cache_dir"] + "rouge_old_version/", trust_remote_code=True
     )
     
     result = {'precision' : [], 'recall' : [], 'fmeasure': [] }
@@ -55,7 +55,7 @@ def rouge(generated, reference,CONFIG , rouge_types=["rougeLsum"], **kwargs):
     """
     New Huggingface version of rouge which returns one aggregated value
     """
-    metric = evaluate.load("rouge", cache_dir=CONFIG["evaluation"]["cache_dir"])
+    metric = evaluate.load("rouge", cache_dir=CONFIG["evaluation"]["cache_dir"], trust_remote_code=True)
     metric.add_batch(predictions=generated, references=reference)
     results = metric.compute(rouge_types=rouge_types)
     return results
