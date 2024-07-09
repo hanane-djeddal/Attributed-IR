@@ -343,45 +343,77 @@ def main():
         default="G",
         choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
     )
+    parser.add_argument(
+        "--results_file",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--overlap",
+        type=bool,
+        default=True,
+    )
+    parser.add_argument(
+        "--autoais",
+        type=str,
+        default="Cit",
+        choices=["Cit", "Pssg","ALCE"],
+    )
     args = parser.parse_args()
     experiment = CONFIG["architectures"][args.architcture]
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
-    results_file = results_folder + "/" + experiment["results_file"]
-    results = pd.read_csv(
-        results_file,
-        converters={"gold_truth": eval, "quotes": eval, "gold_quotes": eval},
-    )
+    results_file = args.results_file if args.results_file else (  results_folder + "/" + experiment["results_file"])
+
+    if results_file.endswith(".json"):
+        with open(results_file) as f:
+            json_dict = json.load(f)
+            results = pd.json_normalize(json_dict["data"])
+    else:
+        results = pd.read_csv(
+            results_file,
+            converters={[CONFIG["column_names"]["passages"]]: eval, [CONFIG["column_names"]["gold_passages"]]: eval},
+        )
 
     #### process generated text
     pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
     results["processed_generated_text"] = results.apply(
-        lambda x: x["generated_text"].replace("<|endoftext|>", ""), axis=1
+        lambda x: x[CONFIG["column_names"]["prediction"]].replace("<|endoftext|>", ""), axis=1
     )
     results["processed_generated_text"] = results[
         "processed_generated_text"
     ].str.replace(pattern, "", regex=True)
 
-    results["gold_answer"] = results["gold_truth"].apply(get_attributable_answer)
-    results = results[results["gold_answer"].str.len() > 0]
+    if args.overlap:
+        results["gold_answer"] = results[CONFIG["column_names"]["reference"]].apply(get_attributable_answer)
+        results = results[results["gold_answer"].str.len() > 0]
+        results["gold_quotes"] = results.apply(
+            lambda x: [q["text"] for q in x[CONFIG["column_names"]["gold_passages"]]], axis=1
+        )
 
-    ############# citations overlap:
-    results = results.apply(citation_overlap, axis=1)
-    print("source_recall", results["source_recall"].mean())
-    print("source_precision", results["source_precision"].mean())
+        ############# citations overlap:
+        results = results.apply(citation_overlap, axis=1)
+        print("source_recall", results["source_recall"].mean())
+        print("source_precision", results["source_precision"].mean())
 
     results["quotes"] = results.apply(
-        lambda x: [q["text"] for q in x["quotes"]], axis=1
+        lambda x: [q["text"] for q in x[CONFIG["column_names"]["passages"]]], axis=1
     )
 
-    results["gold_quotes"] = results.apply(
-        lambda x: [q["text"] for q in x["gold_quotes"]], axis=1
-    )
+    nli_prec_recall = False
+    if args.autoais =="ALCE":
+        nli_prec_recall = True
+        autoais_citation = False
+    elif args.autoais =="Cit":
+        autoais_citation = True
+    else args.autoais =="Cit":
+        autoais_citation = False
+
     scores = compute_nli_autoais_dataset(
         results,
         column_names=["quotes", "processed_generated_text"],
-        autoais_citation=True,
-        nli_prec_recall=False,
+        autoais_citation=autoais_citation,
+        nli_prec_recall=nli_prec_recall,
     )
     print("Score (sent, src) of generated answer RTG-gen queries:", scores)
 

@@ -266,6 +266,7 @@ CONFIG: Dict = {
         "reference": "annotations", #annotations, answers, gold_truth
         "multiple_answers" : "long_answer",
         "passages":"docs", #quotes, docs
+        "gold_passages":None,
         "query": "question", #query , question
     },
 }
