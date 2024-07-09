@@ -87,13 +87,13 @@ We evaluate both the correctness and attribution of the answer. We take in consi
 To evaluate correctness run 
 
 ```
-python evaluate_Correstness_answer_with_citation.py
+python evaluate_Correstness_answer_with_citation.py --architcture {G/RTG-vanilla/RTG-query-gen} 
 ```
 
 For attribution metrics : 
 
 ```
-python citations_eval.py
+python citations_eval.py --architcture {G/RTG-vanilla/RTG-query-gen}
 ```
 
 For retrieval:
