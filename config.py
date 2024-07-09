@@ -7,7 +7,7 @@ ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
 llama_config = {
     "model_name": "Llama-2-7b-chat-hf",
     "model_id": "meta-llama/Llama-2-7b-chat-hf",
-    "cache_dir": "/projects/iris/hdjeddal/cache",#f"{ROOT_PATH}/models_cache/",
+    "cache_dir": f"{ROOT_PATH}/models_cache/",
     "max_new_tokens": 1024,
     "repetition_penalty": 1.1,
     "temperature":0.7,
@@ -254,18 +254,18 @@ architectures_config = {
 CONFIG: Dict = {
     "architectures": architectures_config,
     "langauge_model": llms_config,
-    "dataset": "ALCE", #HAGRID or other : ALCE,..
-    "data_path": f"{ROOT_PATH}/alce_data/asqa_eval_gtr_top100.json", #None,
+    "dataset": "HAGRID", #HAGRID or other : ALCE,..
+    "data_path":None,
     "prompts": prompts_config,
     "retrieval": retrieval_config,
     "query_generation": exp_zephyr_query_gen_fewshots,
     "evaluation":evaluation_config,
     "multiple_gold_answers": True,
     "column_names": {
-        "prediction": "output", # output, generated_text
-        "reference": "annotations", #annotations, answers, gold_truth
-        "multiple_answers" : "long_answer",
-        "passages":"docs", #quotes, docs
-        "query": "question", #query , question
+        "prediction": "generated_text", # output, generated_text
+        "reference": "answers", #annotations, answers, gold_truth
+        "multiple_answers" : "answer", #answer, long_answer
+        "passages":"quotes", #quotes, docs
+        "query": "query", #query , question
     },
 }
