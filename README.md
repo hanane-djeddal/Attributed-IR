@@ -255,12 +255,12 @@ We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/st
     <th>BertScore Prec</th>
     <th>BertScore Rec</th>
     <th>BertScore F-score</th>
-    <th>Overlap Prec</th>
-    <th>Overlap Rec</th>
-    <th>AutoAIS Cit.</th>
-    <th>AutoAIS Pssg.</th>
     <th>NLI Prec.</th>
     <th>NLI Rec.</th>
+    <th>AutoAIS Cit.</th>
+    <th>AutoAIS Pssg.</th>
+    <th>Overlap Prec</th>
+    <th>Overlap Rec</th>
   </tr>
   <tr>
     <td>Gold answer</td>
@@ -271,12 +271,12 @@ We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/st
     <td>-</td>
     <td>-</td>
     <td>-</td>
-    <td>-</td>
-    <td>-</td>
     <td>87.97</td>
     <td>89.21</td>
     <td>83.65</td>
     <td>79.80</td>
+    <td>-</td>
+    <td>-</td>
   </tr>
   <tr>
     <td>G</td>
@@ -306,9 +306,9 @@ We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/st
     <td><b>83.79</b></td>
     <td><b>52.44</b></td>
     <td><b>26.76</b></td>
+    <td>64.03</td>
     <td><b>91.65</b></td>
     <td>26.81</td>
-    <td></td>
   </tr>
   <tr>
     <td>RTG - vanilla (2-psg)</td>
@@ -322,9 +322,9 @@ We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/st
     <td><i>27.71</i></td>
     <td><i>53.49</i></td>
     <td>27.98</td>
+    <td>62.40</td>
     <td>36.03</td>
     <td><i>41.13</i></td>
-    <td></td>
   </tr>
   <tr>
     <td>RTG - query-gen (2-psg)</td>
@@ -338,9 +338,9 @@ We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/st
     <td>28.84</td>
     <td>54.61</td>
     <td><i>29.26</i></td>
+    <td>62.37</td>
     <td><i>36.94 </i></td>
     <td><b>41.95</b></td>
-    <td></td>
   </tr>
   <tr>
     <td>GTR (1-psg)</td>
@@ -353,7 +353,8 @@ We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/st
      <td>88.53</td> 
      <td>26.69</td>
      <td>26.65</td>
-     <td>26.66</td> 
+     <td>26.66</td>
+     <td>26.65</td>
      <td>6.28</td>
      <td>4.28</td>
 
