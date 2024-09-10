@@ -116,8 +116,9 @@ You can specify the name of your data file in `config.py`> `data_path` and chang
 
 
 ## Results
-
+We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/stablelm-zephyr-3b) and [LLaMA-2-chat](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
 *Gold answer* reports the citation quality in the gold answer using automatic metrics. Since the scenario *G* does not include citations, only answer correctness is evaluated. Since the generated answer in scenario *GTR* is the same as in scenario *G*, the answer correctness measures are equal. The best performance measures are in **bold**.
+#### Zephyr-3b
 <sub><sup>
 <table >
   <tr>
@@ -238,6 +239,129 @@ You can specify the name of your data file in `config.py`> `data_path` and chang
 </table>
 </sub></sup>
 
+#### LLaMA-2-chat-7b
+<sub><sup>
+<table >
+  <tr>
+    <th rowspan="2">   Scenarios   </th> 
+    <th colspan="7">Correctness</th>
+    <th colspan="6">Citations</th>
+  </tr>
+  <tr>
+    <th>BLEU</th>
+    <th>ROUGE Prec</th>
+    <th>ROUGE Rec</th>
+    <th>ROUGE F-score</th>
+    <th>BertScore Prec</th>
+    <th>BertScore Rec</th>
+    <th>BertScore F-score</th>
+    <th>NLI Prec.</th>
+    <th>NLI Rec.</th>
+    <th>AutoAIS Cit.</th>
+    <th>AutoAIS Pssg.</th>
+    <th>Overlap Prec</th>
+    <th>Overlap Rec</th>
+  </tr>
+  <tr>
+    <td>Gold answer</td>
+    <td></td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>87.97</td>
+    <td>89.21</td>
+    <td>83.65</td>
+    <td>79.80</td>
+    <td>-</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>G</td>
+    <td> 13.43</td>
+    <td>31.14</td>
+    <td>50.21</td>
+    <td>34.43</td>
+    <td>87.21</td>
+    <td>89.98</td>
+    <td>88.53</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>RTG - gold</td>
+    <td><b>15.04</b></td>
+    <td><b>22.58</b></td>
+    <td><b>71.03</b></td>
+    <td>30.75</td>
+    <td>84.87</td>
+    <td>91.61</td>
+    <td><b>88.07</b></td>
+    <td><b>83.79</b></td>
+    <td><b>52.44</b></td>
+    <td><b>26.76</b></td>
+    <td>64.03</td>
+    <td><b>91.65</b></td>
+    <td>26.81</td>
+  </tr>
+  <tr>
+    <td>RTG - vanilla (2-psg)</td>
+    <td>10.58</td>
+    <td>17.62</td>
+    <td><i>60.23</i></td>
+    <td><i> 24.03</i></td>
+    <td><i>83.62</i></td>
+    <td>89.70</td>
+    <td><i>86.52</i></td>
+    <td><i>27.71</i></td>
+    <td><i>53.49</i></td>
+    <td>27.98</td>
+    <td>62.40</td>
+    <td>36.03</td>
+    <td><i>41.13</i></td>
+  </tr>
+  <tr>
+    <td>RTG - query-gen (2-psg)</td>
+    <td>10.88</td>
+    <td>17.84</td>
+    <td>60.36</td>
+    <td>24.36</td>
+    <td>83.74</td>
+    <td><i>89.78</i></td>
+    <td>86.61</td>
+    <td>28.84</td>
+    <td>54.61</td>
+    <td><i>29.26</i></td>
+    <td>62.37</td>
+    <td><i>36.94 </i></td>
+    <td><b>41.95</b></td>
+  </tr>
+  <tr>
+    <td>GTR (1-psg)</td>
+     <td>13.43</td> 
+     <td>31.14</td> 
+     <td>50.21</td>
+     <td>34.43</td> 
+     <td>87.21</td>
+     <td>89.98</td>
+     <td>88.53</td> 
+     <td>26.69</td>
+     <td>26.65</td>
+     <td>26.66</td>
+     <td>26.65</td>
+     <td>6.28</td>
+     <td>4.28</td>
+
+    
+  </tr>
+</table>
+</sub></sup>
 
 ## Contact
 If you have questions, please open an issue mentioning @hanane-djeddal or send an email to hanane.djeddal[at]irit.fr.
