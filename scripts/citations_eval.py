@@ -6,6 +6,7 @@ import pandas as pd
 import argparse
 import os
 import sys
+import json
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
@@ -387,17 +388,14 @@ def main():
     if args.overlap:
         results["gold_answer"] = results[CONFIG["column_names"]["reference"]].apply(get_attributable_answer)
         results = results[results["gold_answer"].str.len() > 0]
-        results["gold_quotes"] = results.apply(
-            lambda x: [q["text"] for q in x[CONFIG["column_names"]["gold_passages"]]], axis=1
-        )
 
         ############# citations overlap:
         results = results.apply(citation_overlap, axis=1)
         print("source_recall", results["source_recall"].mean())
         print("source_precision", results["source_precision"].mean())
-
+    results = results[results[CONFIG["column_names"]["passages"]].str.len() > 0]
     results["quotes"] = results.apply(
-        lambda x: [q["text"] for q in x[CONFIG["column_names"]["passages"]]], axis=1
+        lambda x: [q["text"] for q in x[CONFIG["column_names"]["passages"]], axis=1
     )
 
     nli_prec_recall = False
@@ -406,7 +404,7 @@ def main():
         autoais_citation = False
     elif args.autoais =="Cit":
         autoais_citation = True
-    else args.autoais =="Cit":
+    elif args.autoais =="Cit":
         autoais_citation = False
 
     scores = compute_nli_autoais_dataset(
@@ -416,6 +414,9 @@ def main():
         nli_prec_recall=nli_prec_recall,
     )
     print("Score (sent, src) of generated answer RTG-gen queries:", scores)
+    results_file = results_file[:-5] + "_perf_answer_citations.json"
+    with open(results_file, "w") as f:
+        json.dump(scores, f, indent=4)
 
 
 main()

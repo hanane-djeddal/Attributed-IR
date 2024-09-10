@@ -263,10 +263,10 @@ CONFIG: Dict = {
     "multiple_gold_answers": True,
     "column_names": {
         "prediction": "output", # output, generated_text
-        "reference": "annotations", #annotations, answers, gold_truth
+        "reference": "gold_truth", #annotations, answers, gold_truth
         "multiple_answers" : "long_answer",
         "passages":"docs", #quotes, docs
-        "gold_passages":None,
+        "gold_passages": "gold_quotes", #None,
         "query": "question", #query , question
     },
 }

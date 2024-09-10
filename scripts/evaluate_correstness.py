@@ -176,7 +176,6 @@ def main():
     performance_df = pd.DataFrame(performance).T
     print(f"Aggregated metrics for the complete dataset")
     print(tabulate(performance_df, headers="keys", tablefmt="presto",floatfmt=".2f"))
-    performance_df.to_csv(os.path.join(results_folder, "performance_bert.csv"))
     bleu_score_all = None
     if multiple_answers:
         print("load bleu score all")
@@ -208,7 +207,8 @@ def main():
 
     performance = performance_bleu | performance
 
-    results_file = results_file.replace(".csv", "_perf_answer.json")
+    
+    results_file = results_file[:-5] + "_perf_answer.json"
 
     with open(results_file, "w") as f:
         json.dump(performance, f, indent=4)
