@@ -8,8 +8,13 @@ import os
 import sys
 import json
 
+os.environ["HTTP_PROXY"] = "http://hacienda:3128"
+os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
+
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
+MAX_source = 7
+MAX_sentences = 20
 
 from config import CONFIG
 from tqdm import tqdm
@@ -102,9 +107,9 @@ def citation_overlap(example):
 
     gen_answer = get_source_from_text(example["processed_generated_text"])
     gen_answer_citations = [
-        example["quotes"][i - 1]["docid"]
+        example[CONFIG["column_names"]["passages"]][i - 1]["docid"]
         for i in gen_answer
-        if i <= len(example["quotes"])
+        if i <= len(example[[CONFIG["column_names"]["passages"]]])
     ]
     gen_sources = set(gen_answer_citations)
 
@@ -160,9 +165,9 @@ def _run_nli_autoais(passage, claim):
     """
     global autoais_model, autoais_tokenizer
     input_text = "premise: {} hypothesis: {}".format(passage, claim)
-    input_ids = autoais_tokenizer(input_text, return_tensors="pt").input_ids.to(
-        autoais_model.device
-    )
+    input_ids = autoais_tokenizer(
+        input_text, return_tensors="pt", truncation=True
+    ).input_ids.to(autoais_model.device)
     with torch.inference_mode():
         outputs = autoais_model.generate(input_ids, max_new_tokens=1024)
     result = autoais_tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -182,8 +187,10 @@ def compute_nli_autoais(
     computes autoais for 'answer'
     """
     sentences = extract_citation(answer, gold_sentences=tokenized_answer)
+    sentences = list(sentences.values())[:MAX_sentences]
     score_per_sentence = []
-    for sent in sentences.values():
+    for sent in sentences:
+        sent["source"] = sent["source"][:MAX_source]
         if infer_from_citation:
             if concat_passages:
                 all_src_passages = " ".join(
@@ -232,13 +239,16 @@ def compute_nli_prec_rec_autoais(
     """
     computes autoais for 'answer'
     """
+
     sentences = extract_citation(answer, gold_sentences=tokenized_answer)
     entail_recall = 0
     sent_mcite_overcite = 0
     entail_prec = 0  # precision
     autoais_log = []
     total_citations = 0
-    for sent in sentences.values():
+    sentences = list(sentences.values())[:MAX_sentences]
+    for sent in sentences:
+        sent["source"] = sent["source"][:MAX_source]
         joint_entail = -1  # recall
         all_src_passages = ""
         # citations recall
@@ -352,19 +362,22 @@ def main():
     parser.add_argument(
         "--overlap",
         type=bool,
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--autoais",
         type=str,
         default="Cit",
-        choices=["Cit", "Pssg","ALCE"],
+        choices=["Cit", "Pssg", "ALCE"],
     )
     args = parser.parse_args()
     experiment = CONFIG["architectures"][args.architcture]
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
-
-    results_file = args.results_file if args.results_file else (  results_folder + "/" + experiment["results_file"])
+    results_file = (
+        args.results_file
+        if args.results_file
+        else (results_folder + "/" + experiment["results_file"])
+    )
 
     if results_file.endswith(".json"):
         with open(results_file) as f:
@@ -373,38 +386,43 @@ def main():
     else:
         results = pd.read_csv(
             results_file,
-            converters={[CONFIG["column_names"]["passages"]]: eval, [CONFIG["column_names"]["gold_passages"]]: eval},
+            converters={
+                CONFIG["column_names"]["passages"]: eval,
+                CONFIG["column_names"]["gold_passages"]: eval,
+            },
         )
-
+    print("Evaluating file:", results_file)
     #### process generated text
     pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
     results["processed_generated_text"] = results.apply(
-        lambda x: x[CONFIG["column_names"]["prediction"]].replace("<|endoftext|>", ""), axis=1
+        lambda x: x[CONFIG["column_names"]["prediction"]].replace("<|endoftext|>", ""),
+        axis=1,
     )
     results["processed_generated_text"] = results[
         "processed_generated_text"
     ].str.replace(pattern, "", regex=True)
-
+    results = results[results[CONFIG["column_names"]["passages"]].str.len() > 0]
     if args.overlap:
-        results["gold_answer"] = results[CONFIG["column_names"]["reference"]].apply(get_attributable_answer)
+        results["gold_answer"] = results[CONFIG["column_names"]["reference"]].apply(
+            get_attributable_answer
+        )
         results = results[results["gold_answer"].str.len() > 0]
 
         ############# citations overlap:
         results = results.apply(citation_overlap, axis=1)
         print("source_recall", results["source_recall"].mean())
         print("source_precision", results["source_precision"].mean())
-    results = results[results[CONFIG["column_names"]["passages"]].str.len() > 0]
     results["quotes"] = results.apply(
-        lambda x: [q["text"] for q in x[CONFIG["column_names"]["passages"]], axis=1
+        lambda x: [q["text"] for q in x[CONFIG["column_names"]["passages"]]], axis=1
     )
 
     nli_prec_recall = False
-    if args.autoais =="ALCE":
+    if args.autoais == "ALCE":
         nli_prec_recall = True
         autoais_citation = False
-    elif args.autoais =="Cit":
+    elif args.autoais == "Cit":
         autoais_citation = True
-    elif args.autoais =="Cit":
+    else:
         autoais_citation = False
 
     scores = compute_nli_autoais_dataset(

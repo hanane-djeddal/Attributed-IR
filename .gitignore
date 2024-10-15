@@ -17,7 +17,6 @@ __pycache__
 *.pkl
 *.dat
 *.lock
-*.bat
 *.out
 
 models_cache

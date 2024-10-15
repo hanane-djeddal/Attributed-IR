@@ -7,7 +7,8 @@ import os
 import sys
 import argparse
 
-
+os.environ["HTTP_PROXY"] = "http://hacienda:3128"
+os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
 
@@ -291,7 +292,7 @@ def compute_nli_prec_rec_autoais(
 
 def compute_nli_autoais_dataset(
     dataframe,
-    column_names=["quotes", "answer"],
+    column_names=["retrieved_passages", "sub_query"],
     autoais_citation=True,
     nli_prec_recall=False,
 ):
@@ -321,8 +322,8 @@ def compute_nli_autoais_dataset(
         if nli_prec_recall:
             autoais_only_cited_sentences, autoais_all_sentences = (
                 compute_nli_prec_rec_autoais(
-                    row[column_names[0]],
-                    row[column_names[1]],
+                    [t[column_names[0]] for t in row["subqueries"]][:1],
+                    [t[column_names[1]] for t in row["subqueries"]],
                 )
             )  # is actually precision, recall
         else:
@@ -345,19 +346,34 @@ def main():
         default="G",
         choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
     )
+    parser.add_argument(
+        "--results_file",
+        type=str,
+        default=None,
+    )
     args = parser.parse_args()
     experiment = CONFIG["architectures"][args.architcture]
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
-    results_file = results_folder + "/" + experiment["results_file"]
+    results_file = (
+        args.results_file
+        if args.results_file
+        else results_folder + "/" + experiment["results_file"]
+    )
     results = pd.read_csv(
         results_file,
-        converters={"gold_truth": eval, "quotes": eval, "gold_quotes": eval},
+        converters={
+            "gold_truth": eval,
+            "quotes": eval,
+            "gold_quotes": eval,
+            CONFIG["column_names"]["passages"]: eval,
+            "sub_queries": eval,
+        },
     )
 
     scores = compute_nli_autoais_dataset(
         results,
-        column_names=["quotes", "answer"],
+        column_names=["retrieved_passages", "sub_query"],
         autoais_citation=True,
         nli_prec_recall=False,
     )

@@ -14,6 +14,9 @@ from torch import cuda, bfloat16
 from transformers import BitsAndBytesConfig
 import transformers
 
+os.environ["HTTP_PROXY"] = "http://hacienda:3128"
+os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
+
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
 
@@ -58,18 +61,17 @@ def main():
     nb_passages = None
     use_support_doc = experiment["use_context"]
 
-    try: 
+    try:
+        print("Loading Model:", model_config["model_id"])
         if args.model_name == "llama":
             bnb_config = transformers.BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=bfloat16,
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_compute_dtype=bfloat16,
             )
-
-            quantization_config=bnb_config
         else:
-            quantization_config = None
+            bnb_config = None
         model_id = model_config["model_id"]
         tokenizer = AutoTokenizer.from_pretrained(
             model_id,
@@ -99,7 +101,10 @@ def main():
             dataset = pd.read_csv(
                 CONFIG["data_path"],
                 encoding="latin-1",
-                converters={ CONFIG["column_names"]["passages"]: eval,  CONFIG["column_names"]["reference"]: eval},
+                converters={
+                    CONFIG["column_names"]["passages"]: eval,
+                    CONFIG["column_names"]["reference"]: eval,
+                },
             )
 
         if experiment["use_retrieved"]:
@@ -124,11 +129,17 @@ def main():
             prompt = CONFIG["prompts"]["prompot_without_context"]
         start = time.time()
         for idx, row in enumerate(tqdm(dataset)):
-            user_prompt = re.sub("\{query\}", row[CONFIG["column_names"]["query"]], prompt["user"])
+            # if idx == 10:
+            #     break
+            user_prompt = re.sub(
+                "\{query\}", row[CONFIG["column_names"]["query"]], prompt["user"]
+            )
             if use_support_doc:
                 context = prepare_contexts(
                     row[CONFIG["column_names"]["passages"]][:nb_passages],
-                    hagrid_gold=(CONFIG["dataset"] == "HAGRID" and experiment["hagrid_gold"]),
+                    hagrid_gold=(
+                        CONFIG["dataset"] == "HAGRID" and experiment["hagrid_gold"]
+                    ),
                     citation=experiment["citation"],
                 )
                 user_prompt = re.sub("\{context\}", context, user_prompt)
@@ -147,7 +158,7 @@ def main():
             )
 
             if args.model_name == "llama":
-                tokens = generate_answer(model,tokenizer,inputs)
+                tokens = generate_answer(model, tokenizer, inputs)
             else:
                 tokens = model.generate(
                     inputs.to(model.device),
@@ -158,26 +169,28 @@ def main():
 
             answer = tokenizer.decode(tokens[0], skip_special_tokens=True)
             if args.model_name == "llama":
-                pattern =r'\[INST\][\s\S].*?\[/INST\]'
+                pattern = r"\[INST\][\s\S].*?\[/INST\]"
             else:
                 pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
             filtered_answer = answer.replace("<|endoftext|>", "")
-            filtered_answer = re.sub(pattern, "", filtered_answer,flags=re.DOTALL)
+            filtered_answer = re.sub(pattern, "", filtered_answer, flags=re.DOTALL)
 
             if experiment["use_retrieved"]:
-                passages = format_support_passages(row["quotes"], row["retrieved_ids"])
+                # passages = format_support_passages(row["quotes"], row["retrieved_ids"])
                 results.append(
                     {
                         "query": row["query"],
-                        "generated_text": filtered_answer,
+                        "output": filtered_answer,
                         "gold_truth": row["answers"],
-                        "quotes": passages[:nb_passages],
+                        "quotes": row[CONFIG["column_names"]["passages"]][:nb_passages],
                         "gold_quotes": row["gold_quotes"],
                     }
                 )
             else:
                 row["output"] = filtered_answer
-                row[CONFIG["column_names"]["passages"]] = row[CONFIG["column_names"]["passages"]][:nb_passages]
+                # row[CONFIG["column_names"]["passages"]] = row[
+                #    CONFIG["column_names"]["passages"]
+                # ][:nb_passages]
                 results.append(row)
         end = time.time()
 
@@ -199,8 +212,10 @@ def main():
         if results is not None:
             exp_config = experiment
             results_df = pd.DataFrame.from_dict(results)
-            results_file = args.results_file if args.results_file else experiment['results_file']
-            results_df.to_csv(f"{experiment_folder}/{results_file}",index = False)
+            results_file = (
+                args.results_file if args.results_file else experiment["results_file"]
+            )
+            results_df.to_csv(f"{experiment_folder}/{results_file}", index=False)
 
             print(
                 "Result file:",

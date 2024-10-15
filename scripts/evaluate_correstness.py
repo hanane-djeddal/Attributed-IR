@@ -6,6 +6,8 @@ import argparse
 from tabulate import tabulate
 import json
 
+os.environ["HTTP_PROXY"] = "http://hacienda:3128"
+os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
@@ -14,6 +16,7 @@ from config import CONFIG
 
 from src.evalution.generation_metrics import *
 from src.data.hagrid_dataset_tools import get_attributable_answer, get_all_answers
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -38,9 +41,16 @@ def main():
 
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
-    results_file = args.results_file if args.results_file else (  results_folder + "/" + experiment["results_file"])
-    multiple_answers = args.multiple_gold_answers if args.multiple_gold_answers else CONFIG["multiple_gold_answers"]
-
+    results_file = (
+        args.results_file
+        if args.results_file
+        else (results_folder + "/" + experiment["results_file"])
+    )
+    multiple_answers = (
+        args.multiple_gold_answers
+        if args.multiple_gold_answers
+        else CONFIG["multiple_gold_answers"]
+    )
 
     print("Loading results file:", results_file)
     generated_column = CONFIG["column_names"]["prediction"]
@@ -54,7 +64,7 @@ def main():
             results_file, index_col=[0], converters={reference_column: eval}
         )
     else:
-        results = pd.read_csv(results_file,index_col=[0])
+        results = pd.read_csv(results_file, index_col=[0])
 
     ## processing the generated text to remove system prompt
 
@@ -68,13 +78,16 @@ def main():
     print("example processed text : ", results["processed_generated_text"][0], "\n")
 
     if CONFIG["dataset"] == "HAGRID":
-        results["gold_answer"] = results[reference_column].apply(get_attributable_answer)
+        results["gold_answer"] = results[reference_column].apply(
+            get_attributable_answer
+        )
         results = results[results["gold_answer"].str.len() > 0]
     elif multiple_answers:
-        results["gold_answer"] = results[reference_column].apply(lambda x : x[0][CONFIG["column_names"]["multiple_answers"]])
+        results["gold_answer"] = results[reference_column].apply(
+            lambda x: x[0][CONFIG["column_names"]["multiple_answers"]]
+        )
     else:
         results["gold_answer"] = results[reference_column]
-
 
     ### remove citiations from answer
     citation_pattern = r"\[\d+(?:,\s*\d+)*\]"
@@ -83,7 +96,11 @@ def main():
     )
     if multiple_answers:
         # add all answer without citiations
-        results["all_gold_answer"] = results[reference_column].apply(lambda x : get_all_answers(x,answer_kw=CONFIG["column_names"]["multiple_answers"]))
+        results["all_gold_answer"] = results[reference_column].apply(
+            lambda x: get_all_answers(
+                x, answer_kw=CONFIG["column_names"]["multiple_answers"]
+            )
+        )
         print(
             "example all gold answer without citations: ",
             results["all_gold_answer"][0],
@@ -145,29 +162,29 @@ def main():
 
     performance = {
         "Rouge": {
-            "Precision": rouge_scores_ov["rougeLsum"][1][0] * 100 ,
-            "Recall": rouge_scores_ov["rougeLsum"][1][1] * 100 ,
-            "fmeasure": rouge_scores_ov["rougeLsum"][1][2] * 100 ,
+            "Precision": rouge_scores_ov["rougeLsum"][1][0] * 100,
+            "Recall": rouge_scores_ov["rougeLsum"][1][1] * 100,
+            "fmeasure": rouge_scores_ov["rougeLsum"][1][2] * 100,
         },
         "Bert": {
-            "Precision": np.array(bert_scores["precision"]).mean() * 100 ,
-            "Recall": np.array(bert_scores["recall"]).mean() * 100 ,
-            "fmeasure": np.array(bert_scores["f1"]).mean() * 100 ,
+            "Precision": np.array(bert_scores["precision"]).mean() * 100,
+            "Recall": np.array(bert_scores["recall"]).mean() * 100,
+            "fmeasure": np.array(bert_scores["f1"]).mean() * 100,
         },
         "Aggregated Rouge": {
-            "Precision": rouge_scores["rougeLsum"] * 100 ,
-            "Recall": rouge_scores["rougeLsum"] * 100 ,
-            "fmeasure": rouge_scores["rougeLsum"] * 100 ,
+            "Precision": rouge_scores["rougeLsum"] * 100,
+            "Recall": rouge_scores["rougeLsum"] * 100,
+            "fmeasure": rouge_scores["rougeLsum"] * 100,
         },
         "Rouge All": {
-            "Precision": np.mean(rouge_scores_ov_all["precision"]) * 100 ,
-            "Recall": np.mean(rouge_scores_ov_all["recall"]) * 100 ,
-            "fmeasure": np.mean(rouge_scores_ov_all["fmeasure"]) * 100 ,
+            "Precision": np.mean(rouge_scores_ov_all["precision"]) * 100,
+            "Recall": np.mean(rouge_scores_ov_all["recall"]) * 100,
+            "fmeasure": np.mean(rouge_scores_ov_all["fmeasure"]) * 100,
         },
         "Bert All": {
-            "Precision": np.mean(bert_scores_all["precision"]) * 100 ,
-            "Recall": np.mean(bert_scores_all["recall"]) * 100 ,
-            "fmeasure": np.mean(bert_scores_all["f1"]) * 100 ,
+            "Precision": np.mean(bert_scores_all["precision"]) * 100,
+            "Recall": np.mean(bert_scores_all["recall"]) * 100,
+            "fmeasure": np.mean(bert_scores_all["f1"]) * 100,
         },
     }
 
@@ -175,39 +192,38 @@ def main():
 
     performance_df = pd.DataFrame(performance).T
     print(f"Aggregated metrics for the complete dataset")
-    print(tabulate(performance_df, headers="keys", tablefmt="presto",floatfmt=".2f"))
+    print(tabulate(performance_df, headers="keys", tablefmt="presto", floatfmt=".2f"))
     bleu_score_all = None
     if multiple_answers:
         print("load bleu score all")
         bleu_score_all = bleu_all(
             results[generated_column], results[reference_column], CONFIG
         )
-        print("bleu_score_all",bleu_score_all)
+        print("bleu_score_all", bleu_score_all)
 
     performance_bleu = {
         "Bleu ": {
-            "Precision": bleu_score["bleu"] *100,
-            "1g": bleu_score["precisions"][0] *100,
-            "2g": bleu_score["precisions"][1] *100,
-            "3g": bleu_score["precisions"][2] *100,
-            "4g": bleu_score["precisions"][3] *100,
+            "Precision": bleu_score["bleu"] * 100,
+            "1g": bleu_score["precisions"][0] * 100,
+            "2g": bleu_score["precisions"][1] * 100,
+            "3g": bleu_score["precisions"][2] * 100,
+            "4g": bleu_score["precisions"][3] * 100,
         },
         "Bleu All": {
-            "Precision": bleu_score_all["bleu"] *100,
-            "1g": bleu_score_all["precisions"][0] *100,
-            "2g": bleu_score_all["precisions"][1] *100,
-            "3g": bleu_score_all["precisions"][2] *100,
-            "4g": bleu_score_all["precisions"][3] *100,
+            "Precision": bleu_score_all["bleu"] * 100,
+            "1g": bleu_score_all["precisions"][0] * 100,
+            "2g": bleu_score_all["precisions"][1] * 100,
+            "3g": bleu_score_all["precisions"][2] * 100,
+            "4g": bleu_score_all["precisions"][3] * 100,
         },
     }
 
     performance_df = pd.DataFrame(performance_bleu).T
     print(f"Aggregated metrics for the complete dataset")
-    print(tabulate(performance_df, headers="keys", tablefmt="presto",floatfmt=".2f"))
+    print(tabulate(performance_df, headers="keys", tablefmt="presto", floatfmt=".2f"))
 
     performance = performance_bleu | performance
 
-    
     results_file = results_file[:-5] + "_perf_answer.json"
 
     with open(results_file, "w") as f:
