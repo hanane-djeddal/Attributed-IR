@@ -143,8 +143,8 @@ matplotlib-inline==0.1.6
 mdurl==0.1.2
 mesh-tensorflow==0.1.21
 mkl==2024.0.0
-mkl-fft @ file:///croot/mkl_fft_1695058164594/work
-mkl-random @ file:///croot/mkl_random_1695059800811/work
+mkl-fft 
+mkl-random
 mkl-service==2.4.0
 ml-collections==0.1.1
 ml-dtypes==0.3.2
