@@ -9,7 +9,7 @@ Search engines are now adopting generative approaches to provide  answers along 
 1. [Installation](#installation)
 2. [Architectures](#architectures)
 3. [Evaluation](#evaluation)
-5. [Extension to Custom Data and Models](#extension)
+5. [Extension to Custom Data and Models](#extension-to-custom-data-and-models)
 6. [Results](#results)
 7. [Contact](#contact)
 ## Installation
@@ -31,7 +31,7 @@ conda activate llms-env
 ```
 ## Architectures
 
-The different architectures of LLM can be found in `scripts`. The configurations to reproduce our work are already stored in `config.py` but you can adjust as needed by including arguments or directly modifying the `config.py` file (see section [Extension to Custom Data and Models](#extension) ).
+The different architectures of LLM can be found in `scripts`. The configurations to reproduce our work are already stored in `config.py` but you can adjust as needed by including arguments or directly modifying the `config.py` file (see section [Extension to Custom Data and Models](#extension-to-custom-data-and-models) ).
 
 #### Generate (G)
 
@@ -55,7 +55,7 @@ First run the retrieval script :
 python scripts/retrieve.py
 ```
 
-Once the retrieval is done, you can then run the next command. To reproduce the results in the paper the `config.py` already has the correct name of the retrieval file stored. However you can always provide your own retrieval file via argument `--retrieved_passages_file` (for more details see section [Extension to Custom Data and Models](#extension)) : 
+Once the retrieval is done, you can then run the next command. To reproduce the results in the paper the `config.py` already has the correct name of the retrieval file stored. However you can always provide your own retrieval file via argument `--retrieved_passages_file` (for more details see section [Extension to Custom Data and Models](#extension-to-custom-data-and-models)) : 
 ```
 python scripts/generate_answer.py --architcture RTG-vanilla --model_name zephyr
 ```
