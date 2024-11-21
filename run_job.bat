@@ -12,7 +12,7 @@
 source ~/.bashrc
 # activer l'environement python
 conda activate llms-env
-cd ....
+cd /home/djeddal/Documents/Code/Attributed-IR
 
 
 #python scripts/generate_answer.py --model_name zephyr --architecture G
