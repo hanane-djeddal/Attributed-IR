@@ -9,9 +9,9 @@ Search engines are now adopting generative approaches to provide  answers along 
 1. [Installation](#installation)
 2. [Architectures](#architectures)
 3. [Evaluation](#evaluation)
-4. [Custom Data](#custom-data)
-5. [Results](#results)
-6. [Contact](#contact)
+5. [Extension to Custom Data and Models](#extension-to-custom-data-and-models)
+6. [Results](#results)
+7. [Contact](#contact)
 ## Installation
 Install dependent Python libraries by running the command below.
 
@@ -24,15 +24,21 @@ You can also create a conda environment by running the command below.
 ```
 conda env create -f environment.yml
 ```
+Activate the environment afterwards 
+
+```
+conda activate llms-env
+```
 ## Architectures
 
-The different architectures of LLM can be found in `scripts`. The configurations are already stored in `config.py` but you can adjust as needed.
+The different architectures of LLM can be found in `scripts`. The configurations to reproduce our work are already stored in `config.py` but you can adjust as needed by including arguments or directly modifying the `config.py` file (see section [Extension to Custom Data and Models](#extension-to-custom-data-and-models) ).
+
 #### Generate (G)
 
 A simple run of the script specifying the architecture and the model :
 
 ```
-python generate_answer.py  --architcture G --model_name zephyr
+python scripts/generate_answer.py  --architcture G --model_name zephyr
 ```
 
 #### Retrieve Then Generate (RTG)
@@ -40,42 +46,42 @@ For this architecture, we need first to retrieve the documents, then use them fo
 ##### RTG-gold
 If the dataset has annotated relevant documents i.e. gold documents,  we can run the generation directly without retrieval.
 ```
-python generate_answer.py  --architcture RTG-gold --model_name zephyr 
+python scripts/generate_answer.py  --architcture RTG-gold --model_name zephyr 
 ```
 ##### RTG-vanilla
 First run the retrieval script :
 
 ```
-python retrieve.py
+python scripts/retrieve.py
 ```
 
-Once the retrieval is done, you can update `config.py` with the name of the generated answer . You can then run : 
+Once the retrieval is done, you can then run the next command. To reproduce the results in the paper the `config.py` already has the correct name of the retrieval file stored. However you can always provide your own retrieval file via argument `--retrieved_passages_file` (for more details see section [Extension to Custom Data and Models](#extension-to-custom-data-and-models)) : 
 ```
-python generate_answer.py --architcture RTG-vanilla --model_name zephyr
+python scripts/generate_answer.py --architcture RTG-vanilla --model_name zephyr
 ```
 
 ##### RTG-query-gen
 First generate the queries:
 
 ```
-python generate_queries.py  --model_name zephyr
+python scripts/generate_queries.py  --model_name zephyr
 ```
-Then we retrieve using the generated queries. By default the aggregation method is "rerank" but can be modified in `config.py`.
+Then we retrieve using the generated queries. By default the aggregation method is "rerank" but can be modified in `config.py`:
 
 ```
-python retrieve_with_generated_queries.py
+python scripts/retrieve_with_generated_queries.py
 ```
 
-Then run the answer generation script specifying the architecture .
+Then run the answer generation script specifying the architecture:
 ```
-python generate_answer.py  --architcture RTG-query-gen --model_name zephyr
+python scripts/generate_answer.py  --architcture RTG-query-gen --model_name zephyr
 ```
 
 #### Generate Then Retrieve (GTR)
 If you have not run the experiment G (Generate), you have to do so. Then run :
 
 ```
-python retrieve_posthoc_gtr.py
+python scripts/retrieve_posthoc_gtr.py
 ```
 
 
@@ -85,35 +91,72 @@ python retrieve_posthoc_gtr.py
 
 We evaluate both the correctness and attribution of the answer. We take in consideration the case where multiple answers are possible. We also offer the evaluation of retrieval results
 
-To evaluate correctness run 
+### Correctness
+To evaluate correctness run (the multiple_gold_answers is True by default) : 
 
 ```
-python evaluate_Correstness_answer_with_citation.py --architcture {G/RTG-vanilla/RTG-query-gen} 
+python scripts/evaluate_correstness.py --architcture {G/RTG-gold/RTG-vanilla/RTG-query-gen} 
 ```
-
-For attribution metrics : 
+### Attribution
+For attribution metrics the argument `--autoais` specifies which type of metric to run : a) for AutoAIS-cit `--autoais Cit`  b) for AutoAIS-Pssg `--autoais Pssg`  c) for ALCE precision/recall `--autoaisALCE`. Add the argument  `--overlap` to have the citation overlap pricision/recall.
 
 ```
-python citations_eval.py --architcture {G/RTG-vanilla/RTG-query-gen}
+python scripts/citations_eval.py --architcture {G/RTG-gold/RTG-vanilla/RTG-query-gen} --autoais {Cit, Pssg, ALCE} --overlap
 ```
 
 For retrieval:
 
 ```
-python evaluate_retrieval.py
+python scripts/evaluate_retrieval.py
 ```
 
-## Custom Data
+## Extension to Custom Data and Models
+
+This code can be extended to different LLMs, and different datasets. We experiment with Zephyr-3b and Llama-2-chat-7b, with HAGRID dataset. The file `config.py` stores all configurations for easy reproduction of our work. Modifications can be applied either by using command-line arguments (will override the configuration in `config.py`) or by directlying modify `config.py`.
+
+### LLM
+The scripts  `scripts/generate_answer.py` and `scripts/generate_queries.py` both take argument `--model_id` which can be a valid huggingface model id. You can also specify whether you want the model to be loaded in 4bits. For example:
+
+```
+python scripts/generate_answer.py --model_id {HuggingFaceH4/zephyr-7b-beta,..} --load_in_4bits
+```
+You can specify more LLM parameters (temperature, max tokens, etc) in `config.py` by manipulating `langauge_model` in the `CONFIG` dictionary (line 267)
+
+### Dataset
 
 We use HAGRID dataset to run our experiments, but this code can be easily applicable to other datasets from huggingfce or from custom files, provided that the dataset contains these fields: 
 
-query : the question or the query
+_query_ : the question or the query
 
-answers : list of possible gold answers (can be one or more)
+_answers_ : [only needed for evaluation] list of possible gold answers (can be one or more)
 
-quotes : documents used as context to generate the answer (Not needed for architecture Generate (G))
+_quotes_ : [only needed for certain architectures] documents used as context to generate the answer (Not needed for architecture Generate (G))
 
-You can specify the name of your data file in `config.py`> `data_path` and change what each column is called in the dataset in `config.py`> `column_names`
+
+For easy applications, we leave column names changeable. In `config.py`, in the `CONFIG` dictionary (line 265-283), you can specify the names of the columns.
+
+#### Dataset From HuggingFace
+
+If the dataset is available on Huggingface, you can directly provide the valid dataset id via the argument  `--dataset` or in `config.py`> `CONFIG:dict` > `dataset` , as well as the split (test, dev, train) by default it's set to 'dev' . For example 
+```
+python scripts/generate_answer.py --model_id {HuggingFaceH4/zephyr-7b-beta,..} --dataset {miracl/hagrid,..} --split {dev,test,train}
+```
+for retrieval a name of an index from pyserini is additionally required
+
+```
+python scripts/retrieve.py --dataset {miracl/hagrid,..} --split {dev,test,train} --index "miracl-v1.0-en"
+```
+#### Dataset From local file
+
+You can directly provide the path towards a dataset file (with minimum the queries column) via the argument  `--data_path` or in `config.py`> `CONFIG:dict` > `data_path` . For example (ASQA dataset)
+```
+python scripts/generate_answer.py --model_id {HuggingFaceH4/zephyr-7b-beta,..} --data_path ./data/asqa_eval_gtr_top100.json
+```
+
+### Additional Parameters
+
+The results file name is in `config.py` by architecture, but can be overridden by command-line arguments  `--results_file`
+For RTG setting, the retrieved documents can be provided from an external file via the argument `--retrieved_passages_file` and the number of documents to be used can set via `--nb_passages` 
 
 
 ## Results
