@@ -22,9 +22,6 @@ from config import CONFIG
 from src.generation.llms.zephyr import generate_queries
 from src.generation.llms.llama2 import generate_queries_llama
 
-os.environ["HTTP_PROXY"] = "http://hacienda:3128"
-os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
-
 
 def main():
     parser = argparse.ArgumentParser()

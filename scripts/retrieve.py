@@ -16,9 +16,6 @@ from config import CONFIG
 
 from src.retrieval.retrieve_bm25_monoT5 import Retriever
 
-os.environ["HTTP_PROXY"] = "http://hacienda:3128"
-os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
-
 
 def main():
     start = time.time()

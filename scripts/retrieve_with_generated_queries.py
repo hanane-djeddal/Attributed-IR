@@ -10,8 +10,6 @@ from tqdm import tqdm
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
 
-os.environ["HTTP_PROXY"] = "http://hacienda:3128"
-os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 
 from config import CONFIG
 from src.retrieval.retrieve_bm25_monoT5 import Retriever
