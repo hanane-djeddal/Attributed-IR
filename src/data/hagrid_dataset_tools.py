@@ -30,14 +30,12 @@ def prepare_contexts(context_list, hagrid_gold=False, citation=True):
             ]
         else:
             if isinstance(context_list[0], dict):
-                context_text = [ context_list[i]["text"] for i in range(len(context_list))]
+                context_text = [
+                    context_list[i]["text"] for i in range(len(context_list))
+                ]
             else:
                 context_text = context_list
 
-
-
-
-        
     return "\n".join(context_text)
 
 
@@ -75,7 +73,7 @@ def get_attributable_answer(answers, text_only=True):
 
 
 def get_all_answers(
-    answers, text_only=True, with_citiations=False, answer_kw = "answer"
+    answers, text_only=True, with_citiations=False, answer_kw="answer"
 ):  # fonction de raouf
     """
     fonction return all the reference answers (type list) for each answers

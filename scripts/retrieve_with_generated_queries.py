@@ -1,6 +1,7 @@
 import os
 import sys
 import datasets
+import argparse
 
 import pandas as pd
 import time
@@ -8,6 +9,9 @@ from tqdm import tqdm
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
+
+os.environ["HTTP_PROXY"] = "http://hacienda:3128"
+os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 
 from config import CONFIG
 from src.retrieval.retrieve_bm25_monoT5 import Retriever
@@ -22,21 +26,45 @@ from src.retrieval.query_aggregation import (
 )
 
 
+def format_support_passages(passages_text, passages_ids):
+    passages = []
+    for i in range(len(passages_text)):
+        passages.append(
+            {"idx": i + 1, "docid": passages_ids[i], "text": passages_text[i]["text"]}
+        )
+    return passages
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--input_file", type=str, default=None, help="File containing sunqueries"
+    )
+    parser.add_argument(
+        "--results_file",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--index",
+        type=str,
+        default="miracl-v1.0-en",
+        help="Name of a corpus index from pyserini LuceneSearcher.",
+    )
+
+    args = parser.parse_args()
     start = time.time()
-
-    dataset = datasets.load_dataset("miracl/hagrid", split="dev")
-    queries_dataset = pd.DataFrame(dataset)
-
-    queries_file = CONFIG["retrieval"]["generated_queries_file"]
+    query_gen_folder = (
+        CONFIG["query_generation"]["experiment_path"]
+        + CONFIG["query_generation"]["experiment_name"]
+    )
+    queries_file = (
+        args.input_file
+        if args.input_file
+        else f"{query_gen_folder}/{CONFIG['query_generation']['results_file']}"
+    )
     print("Loading generated queries from :", queries_file)
-    gen_queries = pd.read_csv(
-        queries_file, converters={"generated_text": eval}, index_col=0
-    )
-    gen_queries = gen_queries.rename(
-        columns={"query_id": "hagrid_query_id", "generated_text": "generated_queries"}
-    )
-    queries_dataset = queries_dataset.merge(gen_queries, on="query")
+    queries_dataset = pd.read_csv(queries_file, converters={"generated_queries": eval})
 
     #### filtering queries
     if CONFIG["retrieval"]["filter_queries"]:
@@ -49,7 +77,7 @@ def main():
             "generated_queries"
         ].apply(lambda x: [q[1:] for q in x if q[0] == " "])
 
-    ranker = Retriever(index="miracl-v1.0-en")
+    ranker = Retriever(index=args.index)
 
     monot5 = MonoT5(device="cuda")
 
@@ -58,8 +86,8 @@ def main():
     print("Retrieval")
     aggregation = CONFIG["retrieval"]["query_aggregation"]
     dataset = queries_dataset
-    for _, row in tqdm(dataset.iterrows()):
-        query_id = row["query_id"]
+    nb_passages = CONFIG["retrieval"]["nb_passages"]
+    for idx, row in tqdm(dataset.iterrows()):
         query = row["query"]
         if aggregation == "sort":
             ids, text, score = sort_all_scores(query, row["generated_queries"], ranker)
@@ -94,34 +122,20 @@ def main():
         elif aggregation == "seperate_queries":
             for q in row["generated_queries"]:
                 ids, text, score = simple_retrieval(q, ranker)
-                results.append(
-                    {
-                        "query": query,
-                        "query_id": query_id,
-                        "sub_query": q,
-                        "retrieved_ids": ids,
-                        "retrieved_passages": [],
-                        "score": score,
-                        "reference_ids": [q["docid"] for q in row["quotes"]],
-                        "answers": row["answers"],
-                        "gold_quotes": row["quotes"],
-                    }
-                )
-                ids, text, score = simple_retrieval(query, ranker)
 
-        results.append(
-            {
-                "query": query,
-                "query_id": query_id,
-                "sub_query": "",
-                "retrieved_ids": ids,
-                "retrieved_passages": text,
-                "score": score,
-                "reference_ids": [q["docid"] for q in row["quotes"]],
-                "answers": row["answers"],
-                "gold_quotes": row["quotes"],
-            }
-        )
+                row["sub_query"] = q
+                row[CONFIG["column_names"]["passages"]] = format_support_passages(
+                    text, ids
+                )
+                row["scores"] = score
+                results.append(row)
+            ids, text, score = simple_retrieval(query, ranker)
+        row["sub_query"] = ""
+        row[CONFIG["column_names"]["passages"]] = format_support_passages(text, ids)[
+            :nb_passages
+        ]
+        row["scores"] = score[:nb_passages]
+        results.append(row)
     end = time.time()
     print("time: ", end - start)
     results_df = pd.DataFrame.from_dict(results)
@@ -133,7 +147,8 @@ def main():
         os.makedirs(experiment_folder)
         print("New directory for experiment is created: ", experiment_folder)
     results_df.to_csv(
-        f"{experiment_folder}/{CONFIG['retrieval']['query_gen_results_file']}"
+        f"{experiment_folder}/{CONFIG['retrieval']['query_gen_results_file']}",
+        index=False,
     )
     print(
         "Results saved in",

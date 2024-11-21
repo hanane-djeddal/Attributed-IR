@@ -1,6 +1,8 @@
 import os
 import sys
 import pandas as pd
+import argparse
+import json
 from tabulate import tabulate
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
@@ -11,21 +13,42 @@ from src.evalution.retrieval_metrics import *
 
 
 def main():
-    results_folder = CONFIG["retrieval"]["results_folder"]
-    results_file = CONFIG["retrieval"]["results_file"]
-    print("Loadinf data from file: ", results_file)
-    results = pd.read_csv(
-        results_file, encoding="latin-1", converters={"retrieved_passages": eval}
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--file",
+        type=str,
+        default=None,
     )
-    results = pd.read_csv(
-        results_file,
-        converters={
-            "retrieved_ids": eval,
-            "retrieved_passages": eval,
-            "score": eval,
-            "reference_ids": eval,
-        },
-        index_col=[0],
+    args = parser.parse_args()
+
+    results_folder = (
+        CONFIG["retrieval"]["experiment_path"] + CONFIG["retrieval"]["experiment_name"]
+    )
+    results_file = (
+        args.file
+        if args.file
+        else f"{results_folder}/{CONFIG['retrieval']['results_file']}"
+    )
+    if results_file.endswith(".json"):
+        print("Loading file : ", results_file)
+        with open(results_file) as f:
+            data = json.load(f)
+            results = pd.json_normalize(data)
+    elif results_file.endswith(".csv"):
+        print("Loading file : ", results_file)
+        results = pd.read_csv(
+            results_file,
+            encoding="latin-1",
+            converters={
+                CONFIG["column_names"]["passages"]: eval,
+                CONFIG["column_names"]["gold_passages"]: eval,
+            },
+        )
+    results["retrieved_ids"] = results[CONFIG["column_names"]["passages"]].apply(
+        lambda x: [d["docid"] for d in x]
+    )
+    results["reference_ids"] = results[CONFIG["column_names"]["gold_passages"]].apply(
+        lambda x: [d["docid"] for d in x]
     )
 
     performance_df = compute_agg_performance(results)

@@ -93,23 +93,28 @@ def extract_citation(passage, gold_sentences=False, keep_source_in_sentence=Fals
     return sent_src
 
 
-def citation_overlap(example):
+def citation_overlap(example, architecture="RTG-vanilla'"):
     """
     Calculates overlap in citations between gold and generated text. The citations must reference the same passages.
     """
+    if architecture == "RTG-gold":
+        passages_column_name = CONFIG["column_names"]["gold_passages"]
+    else:
+        passages_column_name = CONFIG["column_names"]["passages"]
+
     gold_answer = get_source_from_text(example["gold_answer"])
     gold_answer_citations_docids = [
-        example["gold_quotes"][i - 1]["docid"]
+        example[CONFIG["column_names"]["gold_passages"]][i - 1]["docid"]
         for i in gold_answer
-        if i <= len(example["gold_quotes"])
+        if i <= len(example[CONFIG["column_names"]["gold_passages"]])
     ]
     gold_sources = set(gold_answer_citations_docids)
 
     gen_answer = get_source_from_text(example["processed_generated_text"])
     gen_answer_citations = [
-        example[CONFIG["column_names"]["passages"]][i - 1]["docid"]
+        example[passages_column_name][i - 1]["docid"]
         for i in gen_answer
-        if i <= len(example[[CONFIG["column_names"]["passages"]]])
+        if i <= len(example[[passages_column_name]])
     ]
     gen_sources = set(gen_answer_citations)
 
@@ -342,14 +347,20 @@ def compute_nli_autoais_dataset(
             )
             measure1 += autoais_only_cited_sentences
             measure2 += autoais_all_sentences
+    s1 = measure1 / len(dataframe)
+    s2 = measure2 / len(dataframe)
+    if nli_prec_recall:
+        scores = {"precision": s1, "recall": s2}
+    else:
+        scores = {"inlcuding all sentences": s2, "only sentences with citation": s1}
 
-    return measure1 / len(dataframe), measure2 / len(dataframe)
+    return scores
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--architcture",
+        "--architecture",
         type=str,
         default="G",
         choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
@@ -359,11 +370,7 @@ def main():
         type=str,
         default=None,
     )
-    parser.add_argument(
-        "--overlap",
-        type=bool,
-        default=False,
-    )
+    parser.add_argument("--overlap", action="store_true")
     parser.add_argument(
         "--autoais",
         type=str,
@@ -371,7 +378,7 @@ def main():
         choices=["Cit", "Pssg", "ALCE"],
     )
     args = parser.parse_args()
-    experiment = CONFIG["architectures"][args.architcture]
+    experiment = CONFIG["architectures"][args.architecture]
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
     results_file = (
         args.results_file
@@ -384,14 +391,28 @@ def main():
             json_dict = json.load(f)
             results = pd.json_normalize(json_dict["data"])
     else:
-        results = pd.read_csv(
-            results_file,
-            converters={
-                CONFIG["column_names"]["passages"]: eval,
-                CONFIG["column_names"]["gold_passages"]: eval,
-            },
-        )
+        if CONFIG["multiple_gold_answers"]:
+            results = pd.read_csv(
+                results_file,
+                converters={
+                    CONFIG["column_names"]["passages"]: eval,
+                    CONFIG["column_names"]["gold_passages"]: eval,
+                    CONFIG["column_names"]["reference"]: eval,
+                },
+            )
+        else:
+            results = pd.read_csv(
+                results_file,
+                converters={
+                    CONFIG["column_names"]["passages"]: eval,
+                    CONFIG["column_names"]["gold_passages"]: eval,
+                },
+            )
     print("Evaluating file:", results_file)
+    if args.architecture == "RTG-gold":
+        passages_column_name = CONFIG["column_names"]["gold_passages"]
+    else:
+        passages_column_name = CONFIG["column_names"]["passages"]
     #### process generated text
     pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
     results["processed_generated_text"] = results.apply(
@@ -401,7 +422,7 @@ def main():
     results["processed_generated_text"] = results[
         "processed_generated_text"
     ].str.replace(pattern, "", regex=True)
-    results = results[results[CONFIG["column_names"]["passages"]].str.len() > 0]
+    results = results[results[passages_column_name].str.len() > 0]
     if args.overlap:
         results["gold_answer"] = results[CONFIG["column_names"]["reference"]].apply(
             get_attributable_answer
@@ -409,11 +430,13 @@ def main():
         results = results[results["gold_answer"].str.len() > 0]
 
         ############# citations overlap:
-        results = results.apply(citation_overlap, axis=1)
+        results = results.apply(
+            lambda x: citation_overlap(x, architecture=args.architecture), axis=1
+        )
         print("source_recall", results["source_recall"].mean())
         print("source_precision", results["source_precision"].mean())
     results["quotes"] = results.apply(
-        lambda x: [q["text"] for q in x[CONFIG["column_names"]["passages"]]], axis=1
+        lambda x: [q["text"] for q in x[passages_column_name]], axis=1
     )
 
     nli_prec_recall = False

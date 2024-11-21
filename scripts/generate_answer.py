@@ -25,22 +25,13 @@ from src.data.hagrid_dataset_tools import prepare_contexts
 from src.generation.llms.llama2 import generate_answer
 
 
-def format_support_passages(passages_text, passages_ids):
-    passages = []
-    for i in range(len(passages_text)):
-        passages.append(
-            {"idx": i + 1, "docid": passages_ids[i], "text": passages_text[i]["text"]}
-        )
-    return passages
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model_name", type=str, default="zephyr", choices=["zephyr", "llama"]
     )
     parser.add_argument(
-        "--architcture",
+        "--architecture",
         type=str,
         default="G",
         choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
@@ -50,9 +41,50 @@ def main():
         type=str,
         default=None,
     )
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default=None,
+        help="provide a direct valid model_id from huggingFace, for example 'HuggingFaceH4/zephyr-7b-beta' ",
+    )
+
+    parser.add_argument(
+        "--load_in_4bits", action="store_true", help="Loading the model in 4bits"
+    )
+
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        help="Valid name of dataset if available on Huggingface, for example : 'miracl/hagrid' ",
+    )
+
+    parser.add_argument(
+        "--split",
+        type=str,
+        default="dev",
+        help="If you provide dataset from huggingface, provide the split name: dev, test, train",
+    )
+
+    parser.add_argument(
+        "--data_path", type=str, default=None, help="Custom path to dataset file"
+    )
+
+    parser.add_argument(
+        "--nb_passages", type=int, default=None, help="Number of support passages"
+    )
+
+    parser.add_argument(
+        "--retrieved_passages_file",
+        type=int,
+        default=None,
+        help="File containing retrieved passages for RTG-vanilla/ RTG-query-gen setting",
+    )
+
     args = parser.parse_args()
+
     model_config = CONFIG["langauge_model"][args.model_name]
-    experiment = CONFIG["architectures"][args.architcture]
+    experiment = CONFIG["architectures"][args.architecture]
 
     set_seed(model_config["SEED"])
     exception = False
@@ -62,8 +94,9 @@ def main():
     use_support_doc = experiment["use_context"]
 
     try:
-        print("Loading Model:", model_config["model_id"])
-        if args.model_name == "llama":
+        model_id = args.model_id if args.model_id else model_config["model_id"]
+        print("Loading Model:", model_id)
+        if args.model_name == "llama" or args.load_in_4bits:
             bnb_config = transformers.BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_quant_type="nf4",
@@ -72,7 +105,7 @@ def main():
             )
         else:
             bnb_config = None
-        model_id = model_config["model_id"]
+
         tokenizer = AutoTokenizer.from_pretrained(
             model_id,
             cache_dir=model_config["cache_dir"],
@@ -86,32 +119,50 @@ def main():
         )
 
         ## loading data
-        if CONFIG["dataset"] == "HAGRID":
+        if args.dataset:
             dataset = datasets.load_dataset(
-                "miracl/hagrid",
-                split="dev",
+                args.dataset,
+                split=args.split,
                 cache_dir=model_config["cache_dir"],
             )
-        elif CONFIG["data_path"].endswith(".json"):
-            print("Loading data : ", CONFIG["data_path"])
-            with open(CONFIG["data_path"]) as f:
-                dataset = json.load(f)
-        else:
-            print("Loading data : ", CONFIG["data_path"])
-            dataset = pd.read_csv(
-                CONFIG["data_path"],
-                encoding="latin-1",
-                converters={
-                    CONFIG["column_names"]["passages"]: eval,
-                    CONFIG["column_names"]["reference"]: eval,
-                },
+        elif args.data_path or CONFIG["data_path"]:
+            if CONFIG["data_path"].endswith(".json"):
+                print("Loading data : ", CONFIG["data_path"])
+                with open(CONFIG["data_path"]) as f:
+                    dataset = json.load(f)
+            elif CONFIG["data_path"].endswith(".csv"):
+                print("Loading data : ", CONFIG["data_path"])
+                dataframe = pd.read_csv(
+                    CONFIG["data_path"],
+                    encoding="latin-1",
+                    converters={
+                        CONFIG["column_names"]["passages"]: eval,
+                    },
+                )
+                dataset = dataframe.to_dict("records")
+            else:
+                print(
+                    "Data file needs to be a json or a csv file. If the dataset is a huggingface downloadable dataset please specify it through the 'dataset' argument"
+                )
+        elif CONFIG["dataset"] == "HAGRID":
+            dataset = datasets.load_dataset(
+                "miracl/hagrid",
+                split=args.split,
+                cache_dir=model_config["cache_dir"],
             )
+        else:
+            print("No dataset provided")
 
         if experiment["use_retrieved"]:
+            retrieved_passages_file = (
+                args.retrieved_passages_file
+                if args.retrieved_passages_file
+                else experiment["retrieved_passages_file"]
+            )
             retrieved_passages = pd.read_csv(
-                experiment["retrieved_passages_file"],
+                retrieved_passages_file,
                 index_col=[0],
-                converters={"retrieved_ids": eval, "retrieved_passages": eval},
+                converters={CONFIG["column_names"]["passages"]: eval},
             )
             retrieved_passages = retrieved_passages.rename(
                 columns={"retrieved_passages": CONFIG["column_names"]["passages"]}
@@ -129,14 +180,19 @@ def main():
             prompt = CONFIG["prompts"]["prompot_without_context"]
         start = time.time()
         for idx, row in enumerate(tqdm(dataset)):
-            # if idx == 10:
-            #     break
             user_prompt = re.sub(
                 "\{query\}", row[CONFIG["column_names"]["query"]], prompt["user"]
             )
             if use_support_doc:
+                if experiment["use_retrieved"]:
+                    passages = row[CONFIG["column_names"]["passages"]][:nb_passages]
+                elif args.architecture == "RTG-gold":
+                    passages = row[CONFIG["column_names"]["gold_passages"]][
+                        :nb_passages
+                    ]
+
                 context = prepare_contexts(
-                    row[CONFIG["column_names"]["passages"]][:nb_passages],
+                    passages,
                     hagrid_gold=(
                         CONFIG["dataset"] == "HAGRID" and experiment["hagrid_gold"]
                     ),
@@ -176,22 +232,11 @@ def main():
             filtered_answer = re.sub(pattern, "", filtered_answer, flags=re.DOTALL)
 
             if experiment["use_retrieved"]:
-                # passages = format_support_passages(row["quotes"], row["retrieved_ids"])
-                results.append(
-                    {
-                        "query": row["query"],
-                        "output": filtered_answer,
-                        "gold_truth": row["answers"],
-                        "quotes": row[CONFIG["column_names"]["passages"]][:nb_passages],
-                        "gold_quotes": row["gold_quotes"],
-                    }
-                )
-            else:
-                row["output"] = filtered_answer
-                # row[CONFIG["column_names"]["passages"]] = row[
-                #    CONFIG["column_names"]["passages"]
-                # ][:nb_passages]
-                results.append(row)
+                row[CONFIG["column_names"]["passages"]] = row[
+                    CONFIG["column_names"]["passages"]
+                ][:nb_passages]
+            row["output"] = filtered_answer
+            results.append(row)
         end = time.time()
 
         execution_time = (end - start) / 60
@@ -225,6 +270,7 @@ def main():
             config_file = f"{experiment_folder}/{experiment['config_file']}"
             exp_config["execution_time"] = str(execution_time) + " minutes"
             exp_config["error"] = exception
+            exp_config["args"] = vars(args)
             with open(config_file, "w") as file:
                 json.dump(exp_config, file)
         torch.cuda.empty_cache()

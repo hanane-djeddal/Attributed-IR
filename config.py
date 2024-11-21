@@ -7,7 +7,7 @@ ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
 llama_config = {
     "model_name": "Llama-2-7b-chat-hf",
     "model_id": "meta-llama/Llama-2-7b-chat-hf",
-    "cache_dir": "/projects/iris/hdjeddal/cache",  # f"{ROOT_PATH}/models_cache/",
+    "cache_dir": None,  # f"{ROOT_PATH}/models_cache/",
     "max_new_tokens": 1024,
     "repetition_penalty": 1.1,
     "temperature": 0.7,
@@ -17,9 +17,9 @@ llama_config = {
 }
 
 zephyr_config = {
-    "model_name": "HuggingFaceH4/zephyr-7b-beta",  # "stablelm-zephyr-3b",  # HuggingFaceH4/zephyr-7b-beta
-    "model_id": "HuggingFaceH4/zephyr-7b-beta",  # "stabilityai/stablelm-zephyr-3b",  # HuggingFaceH4/zephyr-7b-beta
-    "cache_dir": f"{ROOT_PATH}/models_cache/",
+    "model_name": "stabilityai/stablelm-zephyr-3b",  # "stabilityai/stablelm-zephyr-3b",  # HuggingFaceH4/zephyr-7b-beta
+    "model_id": "stabilityai/stablelm-zephyr-3b",  # "stabilityai/stablelm-zephyr-3b",  # HuggingFaceH4/zephyr-7b-beta
+    "cache_dir": None,  # f"{ROOT_PATH}/models_cache/",
     "max_new_tokens": 4096,
     "repetition_penalty": 1.1,
     "temperature": 0.7,
@@ -38,10 +38,10 @@ retrieval_config = {
     "experiment_name": "retrieval",
     "experiment_path": f"{ROOT_PATH}/results/",
     "results_file": "retrieval_user_query.csv",
-    "query_gen_results_file": "generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv",
-    "generated_queries_file": f"{ROOT_PATH}/results/llamas_zs_query_generation/generated_queries_4shot_4q_Hagrid_llama.csv",
+    "query_gen_results_file": "generated_queries_4shot_4q_retrieved_docs_rerank.csv",
+    "generated_queries_file": f"{ROOT_PATH}/results/RTG_generated_queries/generated_queries_4shot_4q.csv",
     "posthoc_retrieval_file": f"{ROOT_PATH}/results/G/answer_generation_G.csv",
-    "results_file_posthoc": f"{ROOT_PATH}/results/G/answer_generation__GTR.csv",
+    "results_file_posthoc": f"{ROOT_PATH}/results/G/answer_generation_GTR.csv",
     "query_aggregation": "rerank",  # can be : "rerank",  "seperate_queries", vote, sort, simple, summed_vote, mean_vote, combSum
     "filter_queries": False,
     "nb_passages": 5,
@@ -71,11 +71,11 @@ prompts_config = {
     },
 }
 
-exp_zephyr_query_gen_fewshots = {
-    "experiment_name": "llamas_zs_query_generation",
+exp_query_gen_fewshots_hagrid = {
+    "experiment_name": "RTG_generated_queries",
     "experiment_path": f"{ROOT_PATH}/results/",
-    "results_file": "generated_queries_4shot_4q_asqa_llama.csv",  # "generated_queries_4shot_4q.csv",
-    "config_file": "generated_queries_4shot_4q_asqa_config_llama.json",  # "generated_queries_4shot_4q_config.json",
+    "results_file": "generated_queries_4shot_4q.csv",  # "generated_queries_4shot_4q.csv",
+    "config_file": "generated_queries_4shot_4q_config.json",  # "generated_queries_4shot_4q_config.json",
     "setting": "fewshot",  # zeroshot
     "query_gen_prompt": {
         "system": "You are an assistant that helps the user with their search. I will give you a question, based on the possible answer of the question you will provide queries that will help find documents that support it. Only generate your suggested queries without explanation. The maximum number of queries is {nb_queries}",  # .
@@ -212,43 +212,43 @@ architectures_config = {
         "experiment_name": "G",
         "experiment_path": f"{ROOT_PATH}/results/",
         "results_file": "answer_generation_G.csv",
-        "config_file": "answer_generation_G.json",
+        "config_file": "config_answer_generation_G.json",
     },
     "RTG-gold": {
         "use_retrieved": False,
         "hagrid_gold": True,
         "retrieved_passages_file": None,
         "use_context": True,
-        "nb_passages": 5,
+        "nb_passages": None,
         "citation": True,
         "experiment_name": "RTG_gold",
         "experiment_path": f"{ROOT_PATH}/results/",
         "results_file": "answer_generation_RTG_gold_passages.csv",
-        "config_file": "answer_generation_RTG_gold_passages.json",
+        "config_file": "config_answer_generation_RTG_gold_passages.json",
     },
     "RTG-vanilla": {
         "use_retrieved": True,
         "hagrid_gold": False,
-        "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/retrieval_user_query.csv",
+        "retrieved_passages_file": f"{retrieval_config['experiment_path']}{retrieval_config['experiment_name']}/{retrieval_config['results_file']}",  # f"{ROOT_PATH}/results/retrieval/retrieval_user_query.csv",
         "use_context": True,
         "nb_passages": 2,
         "citation": True,
         "experiment_name": "RTG_vanilla",
         "experiment_path": f"{ROOT_PATH}/results/",
         "results_file": "generation_RTG_vanilla_2_passages.csv",
-        "config_file": "generation_RTG_vanilla_2_passages.json",
+        "config_file": "config_generation_RTG_vanilla_2_passages.json",
     },
     "RTG-query-gen": {
         "use_retrieved": True,
         "hagrid_gold": False,
-        "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv",  # generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",
+        "retrieved_passages_file": f"{retrieval_config['experiment_path']}{retrieval_config['experiment_name']}/{retrieval_config['query_gen_results_file']}",  # f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv",
         "use_context": True,
         "nb_passages": 2,
         "citation": True,
         "experiment_name": "RTG_generated_queries",
         "experiment_path": f"{ROOT_PATH}/results/",
         "results_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages_zephyr7B.csv",
-        "config_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages_zephyr7B.json",
+        "config_file": "config_answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages_zephyr7B.json",
     },
     "GTR": {
         "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv",  # generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",
@@ -264,20 +264,20 @@ architectures_config = {
 
 CONFIG: Dict = {
     "architectures": architectures_config,
-    "langauge_model": llms_config,
-    "dataset": "HAGRID",  # HAGRID or other : ALCE,..
-    "data_path": None,  # f"{ROOT_PATH}/alce_data/asqa_eval_gtr_top100.json",  # None,
+    "langauge_model": llms_config,  # add/modify LLM parameters : temeprature, max tokens, etc
+    "dataset": "HAGRID",  # values: HAGRID or other : ALCE,..
+    "data_path": None,  # For ALCE must provide path, values: None, f"{ROOT_PATH}/alce_data/asqa_eval_gtr_top100.json", ..
     "prompts": prompts_config,
     "retrieval": retrieval_config,
-    "query_generation": exp_zephyr_query_gen_fewshots,
+    "query_generation": exp_query_gen_fewshots_hagrid,
     "evaluation": evaluation_config,
     "multiple_gold_answers": True,
     "column_names": {
-        "prediction": "output",  # output, generated_text
-        "reference": "gold_truth",  # annotations, answers, gold_truth
-        "multiple_answers": "answer",  # "long_answer", answer
-        "passages": "docs",  # quotes, docs
-        "gold_passages": None,  # None,
-        "query": "query",  # query , question
+        "prediction": "output",  # values: output, generated_text,..
+        "reference": "answers",  # values: answers (HAGRID), annotations (ALCE),  gold_truth
+        "multiple_answers": "answer",  # If multiple answers are possible, how to access the answers. For example if dataset has column 'gold_answers' which is a list of dictionarieies [{"answer":...}] then provide 'answer' here. Could be : answer (HAGRID), "long_answer" (ALCE)
+        "passages": "retrieved_quotes",  # values: retrieved_quotes (HAGRID), docs (ALCE)
+        "gold_passages": "quotes",  # values: None, quotes(HAGRID),  docs (ALCE), gold_quotes,
+        "query": "query",  # values: query , question
     },
 }

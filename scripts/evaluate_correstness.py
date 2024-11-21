@@ -21,7 +21,7 @@ from src.data.hagrid_dataset_tools import get_attributable_answer, get_all_answe
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--architcture",
+        "--architecture",
         type=str,
         default="G",
         choices=["G", "RTG-gold", "RTG-vanilla", "RTG-query-gen"],
@@ -33,11 +33,10 @@ def main():
     )
     parser.add_argument(
         "--multiple_gold_answers",
-        type=bool,
-        default=False,
+        action="store_true",
     )
     args = parser.parse_args()
-    experiment = CONFIG["architectures"][args.architcture]
+    experiment = CONFIG["architectures"][args.architecture]
 
     results_folder = experiment["experiment_path"] + experiment["experiment_name"]
 
@@ -60,11 +59,9 @@ def main():
             json_dict = json.load(f)
             results = pd.json_normalize(json_dict["data"])
     elif multiple_answers:
-        results = pd.read_csv(
-            results_file, index_col=[0], converters={reference_column: eval}
-        )
+        results = pd.read_csv(results_file, converters={reference_column: eval})
     else:
-        results = pd.read_csv(results_file, index_col=[0])
+        results = pd.read_csv(results_file)
 
     ## processing the generated text to remove system prompt
 
