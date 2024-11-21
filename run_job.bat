@@ -12,11 +12,24 @@
 source ~/.bashrc
 # activer l'environement python
 conda activate llms-env
-cd /home/djeddal/Documents/Code/Attributed-IR
+cd ....
+
+
+#python scripts/generate_answer.py --model_name zephyr --architecture G
+
+#python scripts/generate_answer.py --model_name zephyr --architecture RTG-gold
+
+#python scripts/retrieve.py 
+#python scripts/generate_answer.py --model_name zephyr --architecture RTG-vanilla 
+
+
+#python scripts/generate_queries.py 
+#python scripts/retrieve_with_generated_queries.py
+#python scripts/generate_answer.py --model_name zephyr --architecture RTG-query-gen
 
 
 #python scripts/retrieve_posthoc_gtr.py
-#python scripts/generate_answer.py --model_name zephyr --architcture RTG-vanilla 
-python scripts/citations_eval.py --architcture RTG-vanilla --autoais Cit --results_file /home/djeddal/Documents/Code/Attributed-IR/results/G/answer_generation__GTR_adjusted.json
-#python scripts/evaluate_correstness.py --architcture RTG-vanilla --multiple_gold_answers True --results_file /home/djeddal/Documents/Code/Attributed-IR/results/RTG_gold/answer_generation_RTG_gold_passages.csv
-#python scripts/citations_eval_gtr.py --architcture RTG-vanilla --results_file /home/djeddal/Documents/Code/Attributed-IR/results/G/answer_generation__GTR.csv
+#python scripts/citations_eval.py --architecture RTG-vanilla --autoais Cit 
+python scripts/citations_eval.py --architecture RTG-gold --autoais ALCE --overlap 
+#python scripts/evaluate_correstness.py --architecture RTG-vanilla --multiple_gold_answers --results_file ...
+#python scripts/citations_eval_gtr.py --architecture RTG-vanilla --results_file ...
