@@ -247,8 +247,8 @@ architectures_config = {
         "citation": True,
         "experiment_name": "RTG_generated_queries",
         "experiment_path": f"{ROOT_PATH}/results/",
-        "results_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages_zephyr7B.csv",
-        "config_file": "config_answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages_zephyr7B.json",
+        "results_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages.csv",
+        "config_file": "config_answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages.json",
     },
     "GTR": {
         "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv",  # generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",
