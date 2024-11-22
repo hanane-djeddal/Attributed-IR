@@ -161,6 +161,7 @@ For RTG setting, the retrieved documents can be provided from an external file v
 
 ## Results
 We test the frame on two LLMs: [Zephyr 3b](https://huggingface.co/stabilityai/stablelm-zephyr-3b) and [LLaMA-2-chat](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
+Result files (for Zephyr, Llama will be coming soon) can be found in results/
 *Gold answer* reports the citation quality in the gold answer using automatic metrics. Since the scenario *G* does not include citations, only answer correctness is evaluated. Since the generated answer in scenario *GTR* is the same as in scenario *G*, the answer correctness measures are equal. The best performance measures are in **bold**.
 #### Zephyr-3b
 <sub><sup>
