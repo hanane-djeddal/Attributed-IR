@@ -38,7 +38,7 @@ The different architectures of LLM can be found in `scripts`. The configurations
 A simple run of the script specifying the architecture and the model :
 
 ```
-python scripts/generate_answer.py  --architcture G --model_name zephyr
+python scripts/generate_answer.py  --architecture G --model_name zephyr
 ```
 
 #### Retrieve Then Generate (RTG)
@@ -46,7 +46,7 @@ For this architecture, we need first to retrieve the documents, then use them fo
 ##### RTG-gold
 If the dataset has annotated relevant documents i.e. gold documents,  we can run the generation directly without retrieval.
 ```
-python scripts/generate_answer.py  --architcture RTG-gold --model_name zephyr 
+python scripts/generate_answer.py  --architecture RTG-gold --model_name zephyr 
 ```
 ##### RTG-vanilla
 First run the retrieval script :
@@ -57,7 +57,7 @@ python scripts/retrieve.py
 
 Once the retrieval is done, you can then run the next command. To reproduce the results in the paper the `config.py` already has the correct name of the retrieval file stored. However you can always provide your own retrieval file via argument `--retrieved_passages_file` (for more details see section [Extension to Custom Data and Models](#extension-to-custom-data-and-models)) : 
 ```
-python scripts/generate_answer.py --architcture RTG-vanilla --model_name zephyr
+python scripts/generate_answer.py --architecture RTG-vanilla --model_name zephyr
 ```
 
 ##### RTG-query-gen
@@ -74,7 +74,7 @@ python scripts/retrieve_with_generated_queries.py
 
 Then run the answer generation script specifying the architecture:
 ```
-python scripts/generate_answer.py  --architcture RTG-query-gen --model_name zephyr
+python scripts/generate_answer.py  --architecture RTG-query-gen --model_name zephyr
 ```
 
 #### Generate Then Retrieve (GTR)
@@ -95,13 +95,13 @@ We evaluate both the correctness and attribution of the answer. We take in consi
 To evaluate correctness run (the multiple_gold_answers is True by default) : 
 
 ```
-python scripts/evaluate_correctness.py --architcture {G/RTG-gold/RTG-vanilla/RTG-query-gen} 
+python scripts/evaluate_correctness.py --architecture {G/RTG-gold/RTG-vanilla/RTG-query-gen} 
 ```
 ### Attribution
 For attribution metrics the argument `--autoais` specifies which type of metric to run : a) for AutoAIS-cit `--autoais Cit`  b) for AutoAIS-Pssg `--autoais Pssg`  c) for ALCE precision/recall `--autoaisALCE`. Add the argument  `--overlap` to have the citation overlap pricision/recall.
 
 ```
-python scripts/citations_eval.py --architcture {G/RTG-gold/RTG-vanilla/RTG-query-gen} --autoais {Cit, Pssg, ALCE} --overlap
+python scripts/citations_eval.py --architecture {G/RTG-gold/RTG-vanilla/RTG-query-gen} --autoais {Cit, Pssg, ALCE} --overlap
 ```
 
 For retrieval:
