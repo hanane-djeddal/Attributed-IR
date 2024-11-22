@@ -9,16 +9,16 @@ __pycache__
 .ipynb_checkpoints
 # outputs
 *.xlsx
-*.csv
+.csv
 *.pt
-*.json
+.json
 *.log
 *.tsv
 *.pkl
 *.dat
 *.lock
 *.out
-*.score
+.score
 
 models_cache
 
