@@ -7,8 +7,6 @@ from nltk import sent_tokenize
 import re
 
 
-os.environ["HTTP_PROXY"] = "http://hacienda:3128"
-os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 
 import time
 from tqdm import tqdm
@@ -76,8 +74,6 @@ def main():
 
     dataset = anwsers_as_queries  # miracl["dev"], hagrid
     for idx, row in tqdm(dataset.iterrows()):
-        if idx == 5:
-            break
         question = row["query"]
         answer = row["processed_generated_text"]
 
@@ -120,9 +116,8 @@ def main():
         results.append(data)
 
     ## creating attributed anwsers
-    answers_with_citation = ""
-    all_docs = []
-    for _, row in results.iterrows():
+    final_results = []
+    for _, row in enumerate(results):
         answer = ""
         docs = []
         for q in row["sub_queries"]:
@@ -131,15 +126,14 @@ def main():
             )
             docs.append(q["retrieved_passages"][0])
             answer += citedanswer
-        answers_with_citation.append(answer)
-        all_docs.append(docs)
-
-    results["output"] = answers_with_citation
-    results["docs"] = all_docs
+        
+        row["output"] = answer
+        row["docs"] = docs
+        final_results.append(row)
 
     end = time.time()
     print("time: ", end - start)
-    results_df = pd.DataFrame.from_dict(results)
+    results_df = pd.DataFrame.from_dict(final_results)
     results_df.to_csv(CONFIG["retrieval"]["results_file_posthoc"])
 
 

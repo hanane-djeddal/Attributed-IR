@@ -5,7 +5,8 @@ import pandas as pd
 import argparse
 from tabulate import tabulate
 import json
-
+os.environ["HTTP_PROXY"] = "http://hacienda:3128"
+os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 
 ROOT_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 sys.path.append(ROOT_PATH)
@@ -157,29 +158,29 @@ def main():
 
     performance = {
         "Rouge": {
-            "Precision": rouge_scores_ov["rougeLsum"][1][0] * 100,
-            "Recall": rouge_scores_ov["rougeLsum"][1][1] * 100,
-            "fmeasure": rouge_scores_ov["rougeLsum"][1][2] * 100,
+            "Precision": round(rouge_scores_ov["rougeLsum"][1][0] * 100, 2),
+            "Recall": round(rouge_scores_ov["rougeLsum"][1][1] * 100, 2),
+            "fmeasure": round(rouge_scores_ov["rougeLsum"][1][2] * 100, 2),
         },
         "Bert": {
-            "Precision": np.array(bert_scores["precision"]).mean() * 100,
-            "Recall": np.array(bert_scores["recall"]).mean() * 100,
-            "fmeasure": np.array(bert_scores["f1"]).mean() * 100,
+            "Precision": round(np.array(bert_scores["precision"]).mean() * 100, 2),
+            "Recall": round(np.array(bert_scores["recall"]).mean() * 100, 2),
+            "fmeasure": round(np.array(bert_scores["f1"]).mean() * 100, 2),
         },
         "Aggregated Rouge": {
-            "Precision": rouge_scores["rougeLsum"] * 100,
-            "Recall": rouge_scores["rougeLsum"] * 100,
-            "fmeasure": rouge_scores["rougeLsum"] * 100,
+            "Precision": round(rouge_scores["rougeLsum"] * 100, 2),
+            "Recall": round(rouge_scores["rougeLsum"] * 100, 2),
+            "fmeasure": round(rouge_scores["rougeLsum"] * 100, 2),
         },
         "Rouge All": {
-            "Precision": np.mean(rouge_scores_ov_all["precision"]) * 100,
-            "Recall": np.mean(rouge_scores_ov_all["recall"]) * 100,
-            "fmeasure": np.mean(rouge_scores_ov_all["fmeasure"]) * 100,
+            "Precision": round(np.mean(rouge_scores_ov_all["precision"]) * 100, 2),
+            "Recall": round(np.mean(rouge_scores_ov_all["recall"]) * 100, 2),
+            "fmeasure": round(np.mean(rouge_scores_ov_all["fmeasure"]) * 100, 2),
         },
         "Bert All": {
-            "Precision": np.mean(bert_scores_all["precision"]) * 100,
-            "Recall": np.mean(bert_scores_all["recall"]) * 100,
-            "fmeasure": np.mean(bert_scores_all["f1"]) * 100,
+            "Precision": round(np.mean(bert_scores_all["precision"]) * 100, 2),
+            "Recall": round(np.mean(bert_scores_all["recall"]) * 100, 2),
+            "fmeasure": round(np.mean(bert_scores_all["f1"]) * 100, 2),
         },
     }
 
@@ -198,18 +199,18 @@ def main():
 
     performance_bleu = {
         "Bleu ": {
-            "Precision": bleu_score["bleu"] * 100,
-            "1g": bleu_score["precisions"][0] * 100,
-            "2g": bleu_score["precisions"][1] * 100,
-            "3g": bleu_score["precisions"][2] * 100,
-            "4g": bleu_score["precisions"][3] * 100,
+            "Precision": round(bleu_score["bleu"] * 100, 2),
+            "1g": round(bleu_score["precisions"][0] * 100, 2),
+            "2g": round(bleu_score["precisions"][1] * 100, 2),
+            "3g": round(bleu_score["precisions"][2] * 100, 2),
+            "4g": round(bleu_score["precisions"][3] * 100, 2),
         },
         "Bleu All": {
-            "Precision": bleu_score_all["bleu"] * 100,
-            "1g": bleu_score_all["precisions"][0] * 100,
-            "2g": bleu_score_all["precisions"][1] * 100,
-            "3g": bleu_score_all["precisions"][2] * 100,
-            "4g": bleu_score_all["precisions"][3] * 100,
+            "Precision": round(bleu_score_all["bleu"] * 100, 2),
+            "1g": round(bleu_score_all["precisions"][0] * 100, 2),
+            "2g": round(bleu_score_all["precisions"][1] * 100, 2),
+            "3g": round(bleu_score_all["precisions"][2] * 100, 2),
+            "4g": round(bleu_score_all["precisions"][3] * 100, 2),
         },
     }
 
@@ -217,8 +218,8 @@ def main():
     print(f"Aggregated metrics for the complete dataset")
     print(tabulate(performance_df, headers="keys", tablefmt="presto", floatfmt=".2f"))
 
-    performance = performance_bleu | performance
-
+    #performance = performance_bleu | performance
+    performance = {**performance_bleu, **performance}
     results_file = results_file[:-5] + "_perf_answer.json"
 
     with open(results_file, "w") as f:

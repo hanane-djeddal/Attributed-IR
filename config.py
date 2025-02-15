@@ -5,8 +5,8 @@ ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 llama_config = {
-    "model_name": "Llama-2-7b-chat-hf",
-    "model_id": "meta-llama/Llama-2-7b-chat-hf",
+    "model_name": "meta-llama/Llama-2-13b-chat-hf",
+    "model_id": "meta-llama/Llama-2-13b-chat-hf",
     "cache_dir": None,  # f"{ROOT_PATH}/models_cache/",
     "max_new_tokens": 1024,
     "repetition_penalty": 1.1,
@@ -40,8 +40,8 @@ retrieval_config = {
     "results_file": "retrieval_user_query.csv",
     "query_gen_results_file": "generated_queries_4shot_4q_retrieved_docs_rerank.csv",
     "generated_queries_file": f"{ROOT_PATH}/results/RTG_generated_queries/generated_queries_4shot_4q.csv",
-    "posthoc_retrieval_file": f"{ROOT_PATH}/results/G/answer_generation_G.csv",
-    "results_file_posthoc": f"{ROOT_PATH}/results/G/answer_generation_GTR.csv",
+    "posthoc_retrieval_file": f"{ROOT_PATH}/results/llama13/G/answer_generation_G.csv",
+    "results_file_posthoc": f"{ROOT_PATH}/results/llama13/G/answer_generation_GTR.csv",
     "query_aggregation": "rerank",  # can be : "rerank",  "seperate_queries", vote, sort, simple, summed_vote, mean_vote, combSum
     "filter_queries": False,
     "nb_passages": 5,
@@ -210,7 +210,7 @@ architectures_config = {
         "nb_passages": 0,
         "citation": False,
         "experiment_name": "G",
-        "experiment_path": f"{ROOT_PATH}/results/",
+        "experiment_path": f"{ROOT_PATH}/results/llama13/",
         "results_file": "answer_generation_G.csv",
         "config_file": "config_answer_generation_G.json",
     },
@@ -222,7 +222,7 @@ architectures_config = {
         "nb_passages": None,
         "citation": True,
         "experiment_name": "RTG_gold",
-        "experiment_path": f"{ROOT_PATH}/results/",
+        "experiment_path": f"{ROOT_PATH}/results/llama13/",
         "results_file": "answer_generation_RTG_gold_passages.csv",
         "config_file": "config_answer_generation_RTG_gold_passages.json",
     },
@@ -234,7 +234,7 @@ architectures_config = {
         "nb_passages": 2,
         "citation": True,
         "experiment_name": "RTG_vanilla",
-        "experiment_path": f"{ROOT_PATH}/results/",
+        "experiment_path": f"{ROOT_PATH}/results/llama13/",
         "results_file": "generation_RTG_vanilla_2_passages.csv",
         "config_file": "config_generation_RTG_vanilla_2_passages.json",
     },
@@ -246,7 +246,7 @@ architectures_config = {
         "nb_passages": 2,
         "citation": True,
         "experiment_name": "RTG_generated_queries",
-        "experiment_path": f"{ROOT_PATH}/results/",
+        "experiment_path": f"{ROOT_PATH}/results/llama13/",
         "results_file": "answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages.csv",
         "config_file": "config_answer_generation_RTG_gen_queries_4q_4shots_rerank_2_passages.json",
     },
@@ -254,11 +254,11 @@ architectures_config = {
         "retrieved_passages_file": f"{ROOT_PATH}/results/retrieval/generated_queries_4shot_4q_Hagrid_llama_retrieved_docs_rerank.csv",  # generated_queries_4shot_4q_rerank.csv",  # devMiracl_results_MonoT5_BM500_20_normal_corpus.csv",
         "nb_passages": 1,
         "experiment_name": "GTR",
-        "experiment_path": f"{ROOT_PATH}/results/",
+        "experiment_path": f"{ROOT_PATH}/results/llama13/",
         "results_file": "answer_generation_GTR_1doc_per_sent.csv",
         "config_file": "answer_generation_GTR_1doc_per_sent.json",
-        "posthoc_retrieval_file": f"{ROOT_PATH}/results/G/answer_generation_G.csv",
-        "results_file_posthoc": f"{ROOT_PATH}/results/G/answer_generation__GTR.csv",
+        "posthoc_retrieval_file": f"{ROOT_PATH}/results/G/llama3/answer_generation_G.csv",
+        "results_file_posthoc": f"{ROOT_PATH}/results/G/llama3/answer_generation__GTR.csv",
     },
 }
 
@@ -276,7 +276,7 @@ CONFIG: Dict = {
         "prediction": "output",  # values: output, generated_text,..
         "reference": "answers",  # values: answers (HAGRID), annotations (ALCE),  gold_truth
         "multiple_answers": "answer",  # If multiple answers are possible, how to access the answers. For example if dataset has column 'gold_answers' which is a list of dictionarieies [{"answer":...}] then provide 'answer' here. Could be : answer (HAGRID), "long_answer" (ALCE)
-        "passages": "retrieved_quotes",  # values: retrieved_quotes (HAGRID), docs (ALCE)
+        "passages": "quotes",  # values: retrieved_quotes (HAGRID), docs (ALCE)
         "gold_passages": "quotes",  # values: None, quotes(HAGRID),  docs (ALCE), gold_quotes,
         "query": "query",  # values: query , question
     },

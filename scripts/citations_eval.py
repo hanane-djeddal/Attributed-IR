@@ -299,7 +299,7 @@ def compute_nli_prec_rec_autoais(
         else:
             entail_prec += joint_entail
 
-    recall = entail_recall / len(sentences)
+    recall = entail_recall / len(sentences) if len(sentences) else 0
     precision = entail_prec / total_citations if total_citations > 0 else 0
     return precision, recall
 
@@ -449,11 +449,11 @@ def main():
     scores = compute_nli_autoais_dataset(
         results,
         column_names=["quotes", "processed_generated_text"],
-        autoais_citation=autoais_citation,
-        nli_prec_recall=nli_prec_recall,
+        autoais_citation=round(autoais_citation*100,2),
+        nli_prec_recall=round(nli_prec_recall*100,2),
     )
     print("Score (sent, src) of generated answer RTG-gen queries:", scores)
-    results_file = results_file[:-5] + "_perf_answer_citations.json"
+    results_file = results_file[:-5] + "_perf_answer_citations_"+args.autoais+".json"
     with open(results_file, "w") as f:
         json.dump(scores, f, indent=4)
 
