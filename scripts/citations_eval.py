@@ -461,6 +461,7 @@ def main():
         with open(results_file, "w") as f:
             json.dump(scores, f, indent=4)
     if args.autoais in ["Cit", "all"]:
+        nli_prec_recall = False
         autoais_citation = True
         scores.update(
             compute_nli_autoais_dataset(
@@ -473,6 +474,7 @@ def main():
         with open(results_file, "w") as f:
             json.dump(scores, f, indent=4)
     if args.autoais in ["Pssg", "all"]:
+        nli_prec_recall = False
         autoais_citation = False
         scores.update(
             compute_nli_autoais_dataset(

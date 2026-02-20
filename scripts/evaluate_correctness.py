@@ -71,7 +71,7 @@ def main():
 
     pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
     results["processed_generated_text"] = results.apply(
-        lambda x: x[generated_column].replace("<|endoftext|>", ""), axis=1
+        lambda x: str(x[generated_column]).replace("<|endoftext|>", ""), axis=1
     )
     results["processed_generated_text"] = results[
         "processed_generated_text"
