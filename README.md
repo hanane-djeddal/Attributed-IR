@@ -98,10 +98,10 @@ To evaluate correctness run (the multiple_gold_answers is True by default) :
 python scripts/evaluate_correctness.py --architecture {G/RTG-gold/RTG-vanilla/RTG-query-gen} 
 ```
 ### Attribution
-For attribution metrics the argument `--autoais` specifies which type of metric to run : a) for AutoAIS-cit `--autoais Cit`  b) for AutoAIS-Pssg `--autoais Pssg`  c) for ALCE precision/recall `--autoaisALCE`. Add the argument  `--overlap` to have the citation overlap pricision/recall. This evaluation does not apply to the architecture G
+For attribution metrics the argument `--autoais` specifies which type of metric to run : a) for AutoAIS-cit `--autoais Cit`  b) for AutoAIS-Pssg `--autoais Pssg`  c) for Both `--autoais all`. For ALCE precision and recall add `--alce`. Add the argument  `--overlap` to have the citation overlap pricision/recall. This evaluation does not apply to the architecture G
 
 ```
-python scripts/citations_eval.py --architecture {RTG-gold/RTG-vanilla/RTG-query-gen} --autoais {Cit, Pssg, ALCE} --overlap
+python scripts/citations_eval.py --architecture {RTG-gold/RTG-vanilla/RTG-query-gen} --autoais {Cit, Pssg, all} --overlap --alce
 ```
 
 For retrieval:
