@@ -62,10 +62,8 @@ def main():
         with open(results_file) as f:
             json_dict = json.load(f)
             results = pd.json_normalize(json_dict["data"])
-    elif multiple_answers:
-        results = pd.read_csv(results_file, converters={reference_column: eval})
     else:
-        results = pd.read_csv(results_file)
+        results = pd.read_csv(results_file, converters={reference_column: eval})
 
     ## processing the generated text to remove system prompt
 
