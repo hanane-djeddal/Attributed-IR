@@ -271,13 +271,13 @@ CONFIG: Dict = {
     "retrieval": retrieval_config,
     "query_generation": exp_query_gen_fewshots_hagrid,
     "evaluation": evaluation_config,
-    "multiple_gold_answers": True,
+    "multiple_gold_answers": False,
     "column_names": {
         "prediction": "output",  # values: output, generated_text,..
         "reference": "answers",  # values: answers (HAGRID), annotations (ALCE),  gold_truth
-        "multiple_answers": "answer",  # If multiple answers are possible, how to access the answers. For example if dataset has column 'gold_answers' which is a list of dictionarieies [{"answer":...}] then provide 'answer' here. Could be : answer (HAGRID), "long_answer" (ALCE)
+        "multiple_answers": "answer", #"answer",  # If multiple answers are possible, how to access the answers. For example if dataset has column 'gold_answers' which is a list of dictionarieies [{"answer":...}] then provide 'answer' here. Could be : answer (HAGRID), "long_answer" (ALCE)
         "passages": "quotes",  # values: retrieved_quotes (HAGRID), docs (ALCE)
-        "gold_passages": "quotes",  # values: None, quotes(HAGRID),  docs (ALCE), gold_quotes,
+        "gold_passages": "gold_quotes",  # values: None, quotes(HAGRID),  docs (ALCE), gold_quotes,
         "query": "query",  # values: query , question
     },
 }

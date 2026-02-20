@@ -35,6 +35,15 @@ global autoais_model, autoais_tokenizer
 autoais_model, autoais_tokenizer = None, None
 
 
+def get_max_memory():
+    """Get the maximum memory available for the current GPU for loading models."""
+    free_in_GB = int(torch.cuda.mem_get_info()[0] / 1024**3)
+    max_memory = f"{free_in_GB-6}GB"
+    n_gpus = torch.cuda.device_count()
+    max_memory = {i: max_memory for i in range(n_gpus)}
+    return max_memory
+
+
 def get_source_from_text(passage):
     pattern = re.compile(r"\[\d+(?:,\s*\d+)*\](?:,\s\[\d+(?:,\s*\d+)*\])*")
     number_pattern = re.compile(r"\d+")
@@ -127,8 +136,8 @@ def citation_overlap(example, architecture="RTG-vanilla'"):
     else:
         recall = 0
 
-    example["source_recall"] = recall
-    example["source_precision"] = precision
+    example["overlap_recall"] = recall
+    example["overlap_precision"] = precision
 
     return example
 
@@ -155,8 +164,8 @@ def citation_overlap_gold(example):
     else:
         recall = 0
 
-    example["source_recall"] = recall
-    example["source_precision"] = precision
+    example["Overlap_recall"] = recall
+    example["Overlap_precision"] = precision
 
     return example
 
@@ -305,52 +314,47 @@ def compute_nli_prec_rec_autoais(
 
 
 def compute_nli_autoais_dataset(
-    dataframe,
+    data,
     column_names=["quotes", "answer"],
     autoais_citation=True,
     nli_prec_recall=False,
 ):
     global autoais_model, autoais_tokenizer
     if autoais_model is None:
-
-        nf4_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            dtype=torch.bfloat16,
-        )
         logger.info("Loading AutoAIS model...")
         autoais_model = AutoModelForSeq2SeqLM.from_pretrained(
             AUTOAIS,
             torch_dtype=torch.bfloat16,
-            quantization_config=nf4_config,
+            max_memory=get_max_memory(),
+            device_map="auto",
         )
         autoais_tokenizer = AutoTokenizer.from_pretrained(AUTOAIS, use_fast=False)
-    measure1 = 0
-    measure2 = 0
-    for _, row in tqdm(dataframe.iterrows()):
+
+    logger.info(f"Running AutoAIS...")
+    measure1 =[]
+    measure2 =[]
+    for row in tqdm(data):
         if nli_prec_recall:
             precision, recall = compute_nli_prec_rec_autoais(
                 row[column_names[0]],
                 row[column_names[1]],
             )
-            measure1 += precision
-            measure2 += recall
+            measure1.append(precision)
+            measure2.append(recall)
         else:
             autoais_only_cited_sentences, autoais_all_sentences = compute_nli_autoais(
                 row[column_names[0]],
                 row[column_names[1]],
                 infer_from_citation=autoais_citation,
             )
-            measure1 += autoais_only_cited_sentences
-            measure2 += autoais_all_sentences
-    s1 = measure1 / len(dataframe)
-    s2 = measure2 / len(dataframe)
+            measure1.append(autoais_only_cited_sentences)
+            measure2.append(autoais_all_sentences)
+    s1 = round(sum(measure1) / len(data) * 100,2)
+    s2 =round(sum(measure2) / len(data) * 100,2)
     if nli_prec_recall:
-        scores = {"precision": s1, "recall": s2}
+        scores = {"ALCE precision": s1, "ALCE recall": s2, "alce_prec_per_example":measure1, "alce_rec_per_example":measure2}
     else:
-        scores = {"inlcuding all sentences": s2, "only sentences with citation": s1}
+        scores = {"AutoAIS including all sentences": s2, "AutoAIS only sentences with citation": s1, "autoais_per_example":measure2}
 
     return scores
 
@@ -369,11 +373,12 @@ def main():
         default=None,
     )
     parser.add_argument("--overlap", action="store_true")
+    parser.add_argument("--alce", action="store_true")
     parser.add_argument(
         "--autoais",
         type=str,
-        default="Cit",
-        choices=["Cit", "Pssg", "ALCE"],
+        default=None,
+        choices=["Cit", "Pssg", "all", None],
     )
     args = parser.parse_args()
     experiment = CONFIG["architectures"][args.architecture]
@@ -389,24 +394,15 @@ def main():
             json_dict = json.load(f)
             results = pd.json_normalize(json_dict["data"])
     else:
-        if CONFIG["multiple_gold_answers"]:
-            results = pd.read_csv(
-                results_file,
-                converters={
-                    CONFIG["column_names"]["passages"]: eval,
-                    CONFIG["column_names"]["gold_passages"]: eval,
-                    CONFIG["column_names"]["reference"]: eval,
-                },
-            )
-        else:
-            results = pd.read_csv(
-                results_file,
-                converters={
-                    CONFIG["column_names"]["passages"]: eval,
-                    CONFIG["column_names"]["gold_passages"]: eval,
-                },
-            )
-    print("Evaluating file:", results_file)
+        results = pd.read_csv(
+            results_file,
+            converters={
+                CONFIG["column_names"]["passages"]: eval,
+                CONFIG["column_names"]["gold_passages"]: eval,
+                CONFIG["column_names"]["reference"]: eval,
+            },
+        )
+    logger.info(f"Evaluating file: {results_file}")
     if args.architecture == "RTG-gold":
         passages_column_name = CONFIG["column_names"]["gold_passages"]
     else:
@@ -414,13 +410,24 @@ def main():
     #### process generated text
     pattern = r"<\|system\|>[\s\S]*?<\|assistant\|>\n"
     results["processed_generated_text"] = results.apply(
-        lambda x: x[CONFIG["column_names"]["prediction"]].replace("<|endoftext|>", ""),
+        lambda x: str(x[CONFIG["column_names"]["prediction"]]).replace("<|endoftext|>", ""),
         axis=1,
     )
     results["processed_generated_text"] = results[
         "processed_generated_text"
     ].str.replace(pattern, "", regex=True)
     results = results[results[passages_column_name].str.len() > 0]
+
+    scores = {}
+    results_file = results_file[:-5] + "_scores_attribution.json"
+    if os.path.isfile(results_file):
+        with open(results_file) as f:
+            existing_scores = json.load(f)
+            logger.info(f"Updating existing file with new scores: {results_file}")
+        scores.update(existing_scores)
+    
+
+
     if args.overlap:
         results["gold_answer"] = results[CONFIG["column_names"]["reference"]].apply(
             get_attributable_answer
@@ -431,29 +438,56 @@ def main():
         results = results.apply(
             lambda x: citation_overlap(x, architecture=args.architecture), axis=1
         )
-        print("source_recall", results["source_recall"].mean())
-        print("source_precision", results["source_precision"].mean())
+        scores["overlap_recall"] = round(results["overlap_recall"].mean()*100,2)
+        scores["overlap_precision"] = round(results["overlap_precision"].mean()*100,2)
     results["quotes"] = results.apply(
         lambda x: [q["text"] for q in x[passages_column_name]], axis=1
     )
 
+
     nli_prec_recall = False
-    if args.autoais == "ALCE":
+    data=results.to_dict('records')
+    if args.alce:
         nli_prec_recall = True
         autoais_citation = False
-    elif args.autoais == "Cit":
+        scores.update(
+            compute_nli_autoais_dataset(
+                data,
+                column_names=["quotes", "processed_generated_text"],
+                autoais_citation=round(autoais_citation*100,2),
+                nli_prec_recall=round(nli_prec_recall*100,2),
+                )
+            )
+        with open(results_file, "w") as f:
+            json.dump(scores, f, indent=4)
+    if args.autoais in ["Cit", "all"]:
         autoais_citation = True
-    else:
+        scores.update(
+            compute_nli_autoais_dataset(
+                data,
+                column_names=["quotes", "processed_generated_text"],
+                autoais_citation=round(autoais_citation*100,2),
+                nli_prec_recall=round(nli_prec_recall*100,2),
+                )
+            )
+        with open(results_file, "w") as f:
+            json.dump(scores, f, indent=4)
+    if args.autoais in ["Pssg", "all"]:
         autoais_citation = False
-
-    scores = compute_nli_autoais_dataset(
-        results,
-        column_names=["quotes", "processed_generated_text"],
-        autoais_citation=round(autoais_citation*100,2),
-        nli_prec_recall=round(nli_prec_recall*100,2),
-    )
-    print("Score (sent, src) of generated answer RTG-gen queries:", scores)
-    results_file = results_file[:-5] + "_perf_answer_citations_"+args.autoais+".json"
+        scores.update(
+            compute_nli_autoais_dataset(
+                data,
+                column_names=["quotes", "processed_generated_text"],
+                autoais_citation=round(autoais_citation*100,2),
+                nli_prec_recall=round(nli_prec_recall*100,2),
+                )
+            )
+        with open(results_file, "w") as f:
+            json.dump(scores, f, indent=4)
+    for s in scores.keys():
+        if 'per_example' not in s:
+            print(s, scores[s])
+    logger.info(f"Writing scores to file: {results_file}")
     with open(results_file, "w") as f:
         json.dump(scores, f, indent=4)
 

@@ -137,6 +137,10 @@ def main():
                         CONFIG["column_names"]["passages"]: eval,
                     },
                 )
+                if "quotes" in dataframe.columns:
+                    dataframe = dataframe.rename(
+                        columns={"quotes": CONFIG["column_names"]["gold_passages"]}
+                    )
                 dataset = dataframe.to_dict("records")
             else:
                 print(

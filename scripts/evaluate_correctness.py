@@ -15,6 +15,8 @@ from config import CONFIG
 from src.evalution.generation_metrics import *
 from src.data.hagrid_dataset_tools import get_attributable_answer, get_all_answers
 
+os.environ["HTTP_PROXY"] = "http://hacienda:3128"
+os.environ["HTTPS_PROXY"] = "http://hacienda:3128"
 
 def main():
     parser = argparse.ArgumentParser()
@@ -31,6 +33,10 @@ def main():
     )
     parser.add_argument(
         "--multiple_gold_answers",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--per_example_scores",
         action="store_true",
     )
     args = parser.parse_args()
@@ -170,18 +176,22 @@ def main():
             "Precision": round(rouge_scores["rougeLsum"] * 100, 2),
             "Recall": round(rouge_scores["rougeLsum"] * 100, 2),
             "fmeasure": round(rouge_scores["rougeLsum"] * 100, 2),
-        },
-        "Rouge All": {
-            "Precision": round(np.mean(rouge_scores_ov_all["precision"]) * 100, 2),
-            "Recall": round(np.mean(rouge_scores_ov_all["recall"]) * 100, 2),
-            "fmeasure": round(np.mean(rouge_scores_ov_all["fmeasure"]) * 100, 2),
-        },
-        "Bert All": {
-            "Precision": round(np.mean(bert_scores_all["precision"]) * 100, 2),
-            "Recall": round(np.mean(bert_scores_all["recall"]) * 100, 2),
-            "fmeasure": round(np.mean(bert_scores_all["f1"]) * 100, 2),
-        },
+        }
     }
+    if args.multiple_gold_answers:
+        performance_all = {
+            "Rouge All": {
+                "Precision": round(np.mean(rouge_scores_ov_all["precision"]) * 100, 2),
+                "Recall": round(np.mean(rouge_scores_ov_all["recall"]) * 100, 2),
+                "fmeasure": round(np.mean(rouge_scores_ov_all["fmeasure"]) * 100, 2),
+            },
+            "Bert All": {
+                "Precision": round(np.mean(bert_scores_all["precision"]) * 100, 2),
+                "Recall": round(np.mean(bert_scores_all["recall"]) * 100, 2),
+                "fmeasure": round(np.mean(bert_scores_all["f1"]) * 100, 2),
+            },
+        }
+        performance = {**performance, **performance_all}
 
     print(experiment["experiment_name"])
 
@@ -194,24 +204,26 @@ def main():
         bleu_score_all = bleu_all(
             results[generated_column], results[reference_column], CONFIG
         )
-        print("bleu_score_all", bleu_score_all)
+        print("bleu_score_all", bleu_score_all["bleu"])
 
     performance_bleu = {
         "Bleu ": {
-            "Precision": round(bleu_score["bleu"] * 100, 2),
-            "1g": round(bleu_score["precisions"][0] * 100, 2),
+            "bleu_score": round(bleu_score["bleu"] * 100, 2),
+            "precisions": round(bleu_score["precisions"][0] * 100, 2),
             "2g": round(bleu_score["precisions"][1] * 100, 2),
             "3g": round(bleu_score["precisions"][2] * 100, 2),
             "4g": round(bleu_score["precisions"][3] * 100, 2),
-        },
-        "Bleu All": {
-            "Precision": round(bleu_score_all["bleu"] * 100, 2),
-            "1g": round(bleu_score_all["precisions"][0] * 100, 2),
+        }
+    }
+    if multiple_answers:
+        performance_bleu["Bleu All"] = {
+            "bleu_score": round(bleu_score_all["bleu"] * 100, 2),
+            "precisions": round(bleu_score_all["precisions"][0] * 100, 2),
             "2g": round(bleu_score_all["precisions"][1] * 100, 2),
             "3g": round(bleu_score_all["precisions"][2] * 100, 2),
             "4g": round(bleu_score_all["precisions"][3] * 100, 2),
-        },
-    }
+        }
+
 
     performance_df = pd.DataFrame(performance_bleu).T
     print(f"Aggregated metrics for the complete dataset")
@@ -219,6 +231,15 @@ def main():
 
     #performance = performance_bleu | performance
     performance = {**performance_bleu, **performance}
+    if args.per_example_scores:
+        performance["rougeP_per_example"]=rouge_scores_ov_all["precision"]
+        performance["rougeR_per_example"]=rouge_scores_ov_all["recall"]
+        performance["rougeF_per_example"]=rouge_scores_ov_all["fmeasure"]
+
+        performance["bleu_per_example"]=bleu_score_all["bleu_per_example"]
+        performance["bertP_per_example"]=bert_scores_all["precision"]
+        performance["bertR_per_example"]=bert_scores_all["recall"]
+        performance["bertf_per_example"]=bert_scores_all["f1"]
     results_file = results_file[:-5] + "_perf_answer.json"
 
     with open(results_file, "w") as f:

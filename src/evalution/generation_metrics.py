@@ -74,10 +74,39 @@ def bleu(generated, reference,CONFIG ,**kwargs):
     results = metric.compute()
     return results
 
-def bleu_all(generated, reference,CONFIG ,**kwargs):
+def bleu_all_agg(generated, reference,CONFIG ,**kwargs):
     metric = evaluate.load("bleu", cache_dir=CONFIG["evaluation"]["cache_dir"])
     results = metric.compute(predictions = generated, references = reference)
     return results
+
+def bleu_all(generated, reference, CONFIG, **kwargs):
+    metric = evaluate.load("bleu", cache_dir=CONFIG["evaluation"]["cache_dir"])
+    
+    # Store individual scores
+    bleu_scores = []
+    
+    for pred, refs in zip(generated, reference):
+        # If prediction is empty (no tokens) then BLEU would lead to a brevity-penalty division-by-zero.
+        if not isinstance(pred, str) or len(pred.strip().split()) == 0:
+            bleu_scores.append(0.0)
+            continue
+
+        # Compute BLEU for this single example (refs should be a list)
+        batch_pred = [pred] * len(refs)
+        batch_ref = refs
+        result = metric.compute(predictions=batch_pred, references=batch_ref)
+        bleu_scores.append(result['bleu'])
+    
+    # Also compute aggregate statistics
+    overall_result = metric.compute(predictions=generated, references=reference)
+    
+    return {
+        'bleu': overall_result['bleu'],  # Overall BLEU score
+        'bleu_per_example': bleu_scores,  # List of individual scores
+        'precisions': overall_result.get('precisions', [0.0,0.0,0.0,0.0]),
+        'brevity_penalty': overall_result.get('brevity_penalty', 0.0),
+        'length_ratio': overall_result.get('length_ratio', 0.0),
+    }
 
 def bert_score(generated, reference,CONFIG ,lang="en", **kwargs):
     metric = evaluate.load("bertscore", cache_dir=CONFIG["evaluation"]["cache_dir"])

@@ -9,9 +9,7 @@ __pycache__
 .ipynb_checkpoints
 # outputs
 *.xlsx
-*.csv
 *.pt
-*.json
 *.log
 *.tsv
 *.pkl
